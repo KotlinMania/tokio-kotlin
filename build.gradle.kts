@@ -45,21 +45,9 @@ kotlin {
             xcf.add(this)
         }
     }
-    macosX64 {
-        binaries.framework {
-            baseName = "Tokio"
-            xcf.add(this)
-        }
-    }
     linuxX64()
     mingwX64()
     iosArm64 {
-        binaries.framework {
-            baseName = "Tokio"
-            xcf.add(this)
-        }
-    }
-    iosX64 {
         binaries.framework {
             baseName = "Tokio"
             xcf.add(this)
@@ -117,7 +105,6 @@ rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
     resolution("serialize-javascript", "7.0.5")
     resolution("webpack", "5.106.2")
 }
-
 
 mavenPublishing {
     publishToMavenCentral()
