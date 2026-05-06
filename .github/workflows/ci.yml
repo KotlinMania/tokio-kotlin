@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
   build-macos-arm64:
@@ -32,32 +32,6 @@ jobs:
           iosSimulatorArm64Test
           macosArm64Test
           assembleTokioXCFramework
-          -PenableIosSimulatorTests=true
-          --no-configuration-cache
-
-  build-macos-x64:
-    name: Build and Test (macOS x64 / iOS simulator x64)
-    runs-on: macos-15-intel
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6.0.2
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5.2.0
-        with:
-          distribution: zulu
-          java-version: '21'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.1.0
-
-      - name: Build and test Apple x64 targets
-        run: >
-          ./gradlew
-          compileKotlinIosX64
-          compileKotlinMacosX64
-          iosX64Test
-          macosX64Test
           -PenableIosSimulatorTests=true
           --no-configuration-cache
 
