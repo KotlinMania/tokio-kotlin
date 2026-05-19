@@ -9,7 +9,7 @@ name: "CodeQL Advanced"
 #
 # Three matrix entries cover the languages CodeQL detects in this repo:
 #   - actions             (source-only)
-#   - java-kotlin         (manual build via compileAndroidMain — see note)
+#   - java-kotlin         (manual build via codeqlCompileJvm — see note)
 #   - javascript-typescript (source-only)
 #
 # For java-kotlin, the matrix-shared `Initialize CodeQL -> Perform CodeQL
@@ -17,25 +17,16 @@ name: "CodeQL Advanced"
 # for that language:
 #
 #   1. JDK + Gradle setup (the other two languages need no toolchain).
-#   2. A `./gradlew compileAndroidMain compileKotlinJs compileKotlinWasmJs`
-#      invocation under the CodeQL build tracer.
+#   2. A `./gradlew codeqlCompileJvm` invocation under the CodeQL Java agent.
 #
-# This is a strict-KMP project with no JVM target, so the autobuild
-# default for java-kotlin (`./gradlew testClasses`) has no task to run
-# and `build-mode: none` extracts nothing. The
-# `com.android.kotlin.multiplatform.library` plugin, however, runs the
-# JVM `kotlinc` for the android target and emits real `.class` files
-# under `build/classes/kotlin/android/main` -- exactly what the
-# extractor's LD_PRELOAD tracer (installed by `Initialize CodeQL`)
-# hooks. `compileAndroidMain` therefore carries the java-kotlin
-# analysis; `compileKotlinJs`/`compileKotlinWasmJs` are added on the
-# chance the tracer also matches the JS/WASM `kotlinc` execs.
-# `--rerun-tasks --no-build-cache` defeat Gradle's up-to-date check so
-# kotlinc actually runs; `-Pkotlin.compiler.execution.strategy=out-of-process`
-# plus `--no-configuration-cache --no-daemon` force a fresh traceable
-# `kotlinc` exec per compilation. That is why this file uses
-# `build-mode: manual` for java-kotlin even though autobuild is the
-# template default.
+# This is a KMP project, so the autobuild default for java-kotlin
+# (`./gradlew testClasses`) is not the right extraction surface and
+# `build-mode: none` extracts nothing. The `codeqlCompileJvm` Gradle task
+# compiles common/android Kotlin sources, or a sentinel source while the port
+# is still source-empty, through `K2JVMCompiler`; the CodeQL Java agent hooks
+# that JVM compiler and writes Kotlin TRAP output. That is why this file uses
+# `build-mode: manual` for java-kotlin even though autobuild is the template
+# default.
 
 on:
   schedule:
@@ -97,24 +88,20 @@ jobs:
           # off the init step on warm cache.
           dependency-caching: true
 
-      # Manual build: only java-kotlin gates this. `Initialize CodeQL`
-      # above installs the LD_PRELOAD build tracer into the environment;
-      # the Gradle invocation below runs the android (and JS/WASM)
-      # `kotlinc` compilers as fresh out-of-process execs that the
-      # tracer intercepts, writing per-source `*.kt.trap.gz` extractor
-      # output under ${CODEQL_EXTRACTOR_JAVA_TRAP_DIR}.
+      # Manual build: only java-kotlin gates this. The CodeQL Java agent
+      # is attached to every JVM in this step via JAVA_TOOL_OPTIONS -- every
+      # conforming JVM honors -javaagent at startup independently of any
+      # OS-level LD_PRELOAD tracing chain. The `java,kotlin` spec registers
+      # both JavacMainInterceptor and KotlinInterceptor; the latter hooks
+      # `K2JVMCompiler.doExecute(...)` at class load time and writes
+      # per-source-file `*.kt.trap.gz` outputs under
+      # ${CODEQL_EXTRACTOR_JAVA_TRAP_DIR}.
       - name: Run manual build steps
         if: matrix.build-mode == 'manual'
         run: |
-          ./gradlew \
-            compileAndroidMain \
-            compileKotlinJs \
-            compileKotlinWasmJs \
-            --rerun-tasks \
-            --no-build-cache \
-            -Pkotlin.compiler.execution.strategy=out-of-process \
-            --no-configuration-cache \
-            --no-daemon
+          export JAVA_TOOL_OPTIONS="-javaagent:${CODEQL_EXTRACTOR_JAVA_ROOT}/tools/codeql-java-agent.jar=java,kotlin"
+          echo "JAVA_TOOL_OPTIONS=${JAVA_TOOL_OPTIONS}"
+          ./gradlew --no-daemon codeqlCompileJvm --no-configuration-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
