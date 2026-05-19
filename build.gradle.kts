@@ -180,8 +180,8 @@ rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") {
 rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
     resolution("diff", "8.0.3")
     resolution("**/diff", "8.0.3")
-    resolution("fast-uri", "3.1.1")
-    resolution("**/fast-uri", "3.1.1")
+    resolution("fast-uri", "3.1.2")
+    resolution("**/fast-uri", "3.1.2")
     resolution("serialize-javascript", "7.0.5")
     resolution("**/serialize-javascript", "7.0.5")
     resolution("webpack", "5.106.2")
@@ -192,8 +192,8 @@ rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
     resolution("**/lodash", "4.18.1")
     resolution("ajv", "8.20.0")
     resolution("**/ajv", "8.20.0")
-    resolution("brace-expansion", "5.0.5")
-    resolution("**/brace-expansion", "5.0.5")
+    resolution("brace-expansion", "5.0.6")
+    resolution("**/brace-expansion", "5.0.6")
     resolution("flatted", "3.4.2")
     resolution("**/flatted", "3.4.2")
     resolution("minimatch", "10.2.5")
@@ -204,6 +204,8 @@ rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
     resolution("**/qs", "6.15.1")
     resolution("socket.io-parser", "4.2.6")
     resolution("**/socket.io-parser", "4.2.6")
+    resolution("ws", "8.20.1")
+    resolution("**/ws", "8.20.1")
 }
 
 
