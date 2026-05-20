@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 5/372 (1.3%)
-- **Function parity:** 21/3369 matched (target 39) — 0.6%
-- **Class/type parity:** 6/662 matched (target 7) — 0.9%
-- **Combined symbol parity:** 27/4031 matched (target 46) — 0.7%
-- **Average inline-code cosine:** 0.53 (function body across 5 matched files)
-- **Average documentation cosine:** 0.46 (doc text across 5 matched files)
+- **Files Present:** 8/372 (2.2%)
+- **Function parity:** 52/3340 matched (target 95) — 1.6%
+- **Class/type parity:** 9/662 matched (target 16) — 1.4%
+- **Combined symbol parity:** 61/4002 matched (target 111) — 1.5%
+- **Average inline-code cosine:** 0.48 (function body across 8 matched files)
+- **Average documentation cosine:** 0.57 (doc text across 8 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 4 files with <0.60 function similarity
+- **Critical Issues:** 7 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -45,6 +45,16 @@ Based on AST analysis, here are the concrete next steps.
 - **Missing types:** _none_
 - **Action:** Deep review - likely missing major functionality
 
+### 4. io.async_write
+- **Similarity:** 0.26 (needs 59% improvement)
+- **Dependencies:** 14
+- **Priority Score:** 14000607.0
+- **Functions:** 5/5 matched (target 17)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 4)
+- **Missing types:** _none_
+- **Action:** Deep review - likely missing major functionality
+
 ## Priority 2: Port Missing High-Value Files
 
 Critical missing files (>10 dependencies):
@@ -53,35 +63,31 @@ Critical missing files (>10 dependencies):
    - Path: `macros/pin.rs`
    - Essential for 86 other files
 
-2. **runtime.context** (14 deps)
-   - Path: `runtime/context.rs`
-   - Essential for 14 other files
-
-3. **io.async_write** (14 deps)
-   - Path: `io/async_write.rs`
-   - Essential for 14 other files
-
-4. **sync.mutex** (14 deps)
+2. **sync.mutex** (14 deps)
    - Path: `sync/mutex.rs`
    - Essential for 14 other files
 
-5. **util.mem** (13 deps)
+3. **runtime.context** (14 deps)
+   - Path: `runtime/context.rs`
+   - Essential for 14 other files
+
+4. **util.mem** (13 deps)
    - Path: `io/util/mem.rs`
    - Essential for 13 other files
 
-6. **util.error** (12 deps)
+5. **util.error** (12 deps)
    - Path: `util/error.rs`
    - Essential for 12 other files
+
+6. **metrics.scheduler** (11 deps)
+   - Path: `runtime/metrics/scheduler.rs`
+   - Essential for 11 other files
 
 7. **runtime.handle** (11 deps)
    - Path: `runtime/handle.rs`
    - Essential for 11 other files
 
-8. **metrics.scheduler** (11 deps)
-   - Path: `runtime/metrics/scheduler.rs`
-   - Essential for 11 other files
-
-9. **sync.notify** (10 deps)
+8. **sync.notify** (10 deps)
    - Path: `sync/notify.rs`
    - Essential for 10 other files
 
@@ -123,7 +129,40 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Lint issues:** 1
 
-### 4. util.memchr
+### 4. io.async_write
+
+- **Target:** `io.AsyncWrite`
+- **Similarity:** 0.26
+- **Dependents:** 14
+- **Priority Score:** 14000607.0
+- **Functions:** 5/5 matched (target 17)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 4)
+- **Missing types:** _none_
+
+### 5. io.async_read
+
+- **Target:** `io.AsyncRead`
+- **Similarity:** 0.40
+- **Dependents:** 5
+- **Priority Score:** 5000206.0
+- **Functions:** 1/1 matched (target 4)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 3)
+- **Missing types:** _none_
+
+### 6. io.read_buf
+
+- **Target:** `io.ReadBuf`
+- **Similarity:** 0.53
+- **Dependents:** 4
+- **Priority Score:** 4002604.8
+- **Functions:** 25/25 matched (target 35)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 2)
+- **Missing types:** _none_
+
+### 7. util.memchr
 
 - **Target:** `util.Memchr`
 - **Similarity:** 0.38
@@ -135,7 +174,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
 
-### 5. util.metric_atomics
+### 8. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
