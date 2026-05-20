@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 3/372 (0.8%)
-- **Function parity:** 12/3369 matched (target 16) — 0.4%
-- **Class/type parity:** 3/662 matched (target 4) — 0.5%
-- **Combined symbol parity:** 15/4031 matched (target 20) — 0.4%
-- **Average inline-code cosine:** 0.59 (function body across 3 matched files)
-- **Average documentation cosine:** 0.44 (doc text across 3 matched files)
+- **Files Present:** 4/372 (1.1%)
+- **Function parity:** 15/3369 matched (target 21) — 0.4%
+- **Class/type parity:** 4/662 matched (target 5) — 0.6%
+- **Combined symbol parity:** 19/4031 matched (target 26) — 0.5%
+- **Average inline-code cosine:** 0.55 (function body across 4 matched files)
+- **Average documentation cosine:** 0.33 (doc text across 4 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 2 files with <0.60 function similarity
+- **Critical Issues:** 3 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -25,6 +25,16 @@ Based on AST analysis, here are the concrete next steps.
 - **Missing types:** _none_
 - **Action:** Minor refinements needed
 
+### 2. std.unsafe_cell
+- **Similarity:** 0.44 (needs 41% improvement)
+- **Dependencies:** 25
+- **Priority Score:** 25000406.0
+- **Functions:** 3/3 matched (target 5)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+- **Action:** Deep review - likely missing major functionality
+
 ## Priority 2: Port Missing High-Value Files
 
 Critical missing files (>10 dependencies):
@@ -33,43 +43,39 @@ Critical missing files (>10 dependencies):
    - Path: `macros/pin.rs`
    - Essential for 86 other files
 
-2. **std.unsafe_cell** (25 deps)
-   - Path: `loom/std/unsafe_cell.rs`
-   - Essential for 25 other files
-
-3. **std.atomic_usize** (17 deps)
+2. **std.atomic_usize** (17 deps)
    - Path: `loom/std/atomic_usize.rs`
    - Essential for 17 other files
+
+3. **io.async_write** (14 deps)
+   - Path: `io/async_write.rs`
+   - Essential for 14 other files
 
 4. **runtime.context** (14 deps)
    - Path: `runtime/context.rs`
    - Essential for 14 other files
 
-5. **io.async_write** (14 deps)
-   - Path: `io/async_write.rs`
-   - Essential for 14 other files
-
-6. **sync.mutex** (14 deps)
+5. **sync.mutex** (14 deps)
    - Path: `sync/mutex.rs`
    - Essential for 14 other files
 
-7. **util.mem** (13 deps)
+6. **util.mem** (13 deps)
    - Path: `io/util/mem.rs`
    - Essential for 13 other files
 
-8. **util.error** (12 deps)
+7. **util.error** (12 deps)
    - Path: `util/error.rs`
    - Essential for 12 other files
 
-9. **runtime.handle** (11 deps)
+8. **runtime.handle** (11 deps)
    - Path: `runtime/handle.rs`
    - Essential for 11 other files
 
-10. **metrics.scheduler** (11 deps)
+9. **metrics.scheduler** (11 deps)
    - Path: `runtime/metrics/scheduler.rs`
    - Essential for 11 other files
 
-11. **sync.notify** (10 deps)
+10. **sync.notify** (10 deps)
    - Path: `sync/notify.rs`
    - Essential for 10 other files
 
@@ -88,7 +94,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 2. util.memchr
+### 2. std.unsafe_cell
+
+- **Target:** `std.UnsafeCell`
+- **Similarity:** 0.44
+- **Dependents:** 25
+- **Priority Score:** 25000406.0
+- **Functions:** 3/3 matched (target 5)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 3. util.memchr
 
 - **Target:** `util.Memchr`
 - **Similarity:** 0.38
@@ -100,7 +117,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
 
-### 3. util.metric_atomics
+### 4. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
