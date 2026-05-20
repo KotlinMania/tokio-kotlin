@@ -17,11 +17,12 @@ name: "CodeQL Advanced"
 # for that language:
 #
 #   1. JDK + Gradle setup (the other two languages need no toolchain).
-#   2. A `./gradlew codeqlCompileJvm` invocation under the CodeQL Java agent.
+#   2. A `./gradlew setupAndroidSdk codeqlCompileJvm` invocation under the CodeQL Java agent.
 #
 # This is a KMP project, so the autobuild default for java-kotlin
 # (`./gradlew testClasses`) is not the right extraction surface and
-# `build-mode: none` extracts nothing. The `codeqlCompileJvm` Gradle task
+# `build-mode: none` extracts nothing. The `setupAndroidSdk` preflight keeps
+# Android SDK resolution project-local on every host, and the `codeqlCompileJvm` Gradle task
 # compiles common/android Kotlin sources, or a sentinel source while the port
 # is still source-empty, through `K2JVMCompiler`; the CodeQL Java agent hooks
 # that JVM compiler and writes Kotlin TRAP output. That is why this file uses
@@ -101,7 +102,7 @@ jobs:
         run: |
           export JAVA_TOOL_OPTIONS="-javaagent:${CODEQL_EXTRACTOR_JAVA_ROOT}/tools/codeql-java-agent.jar=java,kotlin"
           echo "JAVA_TOOL_OPTIONS=${JAVA_TOOL_OPTIONS}"
-          ./gradlew --no-daemon codeqlCompileJvm --no-configuration-cache
+          ./gradlew --no-daemon setupAndroidSdk codeqlCompileJvm --no-configuration-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
