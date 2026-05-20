@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 2/372 (0.5%)
-- **Function parity:** 8/3370 matched (target 12) — 0.2%
-- **Class/type parity:** 3/662 matched (target 3) — 0.5%
-- **Combined symbol parity:** 11/4032 matched (target 15) — 0.3%
-- **Average inline-code cosine:** 0.70 (function body across 2 matched files)
-- **Average documentation cosine:** 0.39 (doc text across 2 matched files)
+- **Files Present:** 3/372 (0.8%)
+- **Function parity:** 12/3369 matched (target 16) — 0.4%
+- **Class/type parity:** 3/662 matched (target 4) — 0.5%
+- **Combined symbol parity:** 15/4031 matched (target 20) — 0.4%
+- **Average inline-code cosine:** 0.59 (function body across 3 matched files)
+- **Average documentation cosine:** 0.44 (doc text across 3 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 1 files with <0.60 function similarity
+- **Critical Issues:** 2 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -45,12 +45,12 @@ Critical missing files (>10 dependencies):
    - Path: `runtime/context.rs`
    - Essential for 14 other files
 
-5. **sync.mutex** (14 deps)
-   - Path: `sync/mutex.rs`
+5. **io.async_write** (14 deps)
+   - Path: `io/async_write.rs`
    - Essential for 14 other files
 
-6. **io.async_write** (14 deps)
-   - Path: `io/async_write.rs`
+6. **sync.mutex** (14 deps)
+   - Path: `sync/mutex.rs`
    - Essential for 14 other files
 
 7. **util.mem** (13 deps)
@@ -88,7 +88,19 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 2. util.metric_atomics
+### 2. util.memchr
+
+- **Target:** `util.Memchr`
+- **Similarity:** 0.38
+- **Dependents:** 1
+- **Priority Score:** 1000406.2
+- **Functions:** 4/4 matched
+- **Missing functions:** _none_
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 3/3 matched
+
+### 3. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
