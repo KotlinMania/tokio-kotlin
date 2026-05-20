@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 4/372 (1.1%)
-- **Function parity:** 15/3369 matched (target 21) — 0.4%
-- **Class/type parity:** 4/662 matched (target 5) — 0.6%
-- **Combined symbol parity:** 19/4031 matched (target 26) — 0.5%
-- **Average inline-code cosine:** 0.55 (function body across 4 matched files)
-- **Average documentation cosine:** 0.33 (doc text across 4 matched files)
+- **Files Present:** 5/372 (1.3%)
+- **Function parity:** 21/3369 matched (target 39) — 0.6%
+- **Class/type parity:** 6/662 matched (target 7) — 0.9%
+- **Combined symbol parity:** 27/4031 matched (target 46) — 0.7%
+- **Average inline-code cosine:** 0.53 (function body across 5 matched files)
+- **Average documentation cosine:** 0.46 (doc text across 5 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 3 files with <0.60 function similarity
+- **Critical Issues:** 4 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -35,6 +35,16 @@ Based on AST analysis, here are the concrete next steps.
 - **Missing types:** _none_
 - **Action:** Deep review - likely missing major functionality
 
+### 3. std.atomic_usize
+- **Similarity:** 0.45 (needs 40% improvement)
+- **Dependencies:** 17
+- **Priority Score:** 17000806.0
+- **Functions:** 6/6 matched (target 18)
+- **Missing functions:** _none_
+- **Types:** 2/2 matched
+- **Missing types:** _none_
+- **Action:** Deep review - likely missing major functionality
+
 ## Priority 2: Port Missing High-Value Files
 
 Critical missing files (>10 dependencies):
@@ -43,39 +53,35 @@ Critical missing files (>10 dependencies):
    - Path: `macros/pin.rs`
    - Essential for 86 other files
 
-2. **std.atomic_usize** (17 deps)
-   - Path: `loom/std/atomic_usize.rs`
-   - Essential for 17 other files
+2. **runtime.context** (14 deps)
+   - Path: `runtime/context.rs`
+   - Essential for 14 other files
 
 3. **io.async_write** (14 deps)
    - Path: `io/async_write.rs`
    - Essential for 14 other files
 
-4. **runtime.context** (14 deps)
-   - Path: `runtime/context.rs`
-   - Essential for 14 other files
-
-5. **sync.mutex** (14 deps)
+4. **sync.mutex** (14 deps)
    - Path: `sync/mutex.rs`
    - Essential for 14 other files
 
-6. **util.mem** (13 deps)
+5. **util.mem** (13 deps)
    - Path: `io/util/mem.rs`
    - Essential for 13 other files
 
-7. **util.error** (12 deps)
+6. **util.error** (12 deps)
    - Path: `util/error.rs`
    - Essential for 12 other files
 
-8. **runtime.handle** (11 deps)
+7. **runtime.handle** (11 deps)
    - Path: `runtime/handle.rs`
    - Essential for 11 other files
 
-9. **metrics.scheduler** (11 deps)
+8. **metrics.scheduler** (11 deps)
    - Path: `runtime/metrics/scheduler.rs`
    - Essential for 11 other files
 
-10. **sync.notify** (10 deps)
+9. **sync.notify** (10 deps)
    - Path: `sync/notify.rs`
    - Essential for 10 other files
 
@@ -105,7 +111,19 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 3. util.memchr
+### 3. std.atomic_usize
+
+- **Target:** `std.AtomicUsize`
+- **Similarity:** 0.45
+- **Dependents:** 17
+- **Priority Score:** 17000806.0
+- **Functions:** 6/6 matched (target 18)
+- **Missing functions:** _none_
+- **Types:** 2/2 matched
+- **Missing types:** _none_
+- **Lint issues:** 1
+
+### 4. util.memchr
 
 - **Target:** `util.Memchr`
 - **Similarity:** 0.38
@@ -117,7 +135,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
 
-### 4. util.metric_atomics
+### 5. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
