@@ -569,3 +569,78 @@ val patchWasmWasiNodePreopens = tasks.register("patchWasmWasiNodePreopens") {
 tasks.named("wasmWasiNodeTest") {
     dependsOn(patchWasmWasiNodePreopens)
 }
+
+// `build` must compile and link every configured target's main and test
+// artifacts, plus the registered XCFramework. The default Gradle `build` graph
+// omits non-host native test links and XCFramework assembly, which would let a
+// green build silently skip Android Native, Linux/Arm64, Apple-device, and
+// XCFramework outputs. The explicit list below is the audit contract; the
+// `afterEvaluate` matcher is a safety net for newly generated aggregator tasks.
+val fullTargetBuildTaskNames = setOf(
+    "compileAndroidMain",
+    "compileAndroidHostTest",
+    "compileAndroidDeviceTest",
+    "assembleAndroidMain",
+    "assembleUnitTest",
+    "assembleAndroidTest",
+    "jvmMainClasses",
+    "jvmTestClasses",
+    "jsMainClasses",
+    "jsTestClasses",
+    "wasmJsMainClasses",
+    "wasmJsTestClasses",
+    "wasmWasiMainClasses",
+    "wasmWasiTestClasses",
+    "androidNativeArm32Binaries",
+    "androidNativeArm32TestBinaries",
+    "androidNativeArm64Binaries",
+    "androidNativeArm64TestBinaries",
+    "androidNativeX64Binaries",
+    "androidNativeX64TestBinaries",
+    "androidNativeX86Binaries",
+    "androidNativeX86TestBinaries",
+    "iosArm64Binaries",
+    "iosArm64TestBinaries",
+    "iosSimulatorArm64Binaries",
+    "iosSimulatorArm64TestBinaries",
+    "iosX64Binaries",
+    "iosX64TestBinaries",
+    "linuxArm64Binaries",
+    "linuxArm64TestBinaries",
+    "linuxX64Binaries",
+    "linuxX64TestBinaries",
+    "macosArm64Binaries",
+    "macosArm64TestBinaries",
+    "mingwX64Binaries",
+    "mingwX64TestBinaries",
+    "tvosArm64Binaries",
+    "tvosArm64TestBinaries",
+    "tvosSimulatorArm64Binaries",
+    "tvosSimulatorArm64TestBinaries",
+    "watchosArm32Binaries",
+    "watchosArm32TestBinaries",
+    "watchosArm64Binaries",
+    "watchosArm64TestBinaries",
+    "watchosDeviceArm64Binaries",
+    "watchosDeviceArm64TestBinaries",
+    "watchosSimulatorArm64Binaries",
+    "watchosSimulatorArm64TestBinaries",
+    "assembleTokioXCFramework",
+)
+
+tasks.named("build") {
+    dependsOn(fullTargetBuildTaskNames)
+}
+
+afterEvaluate {
+    tasks.named("build") {
+        dependsOn(
+            tasks.matching {
+                name.endsWith("MainClasses") ||
+                    name.endsWith("TestClasses") ||
+                    name.endsWith("Binaries") ||
+                    name.endsWith("XCFramework")
+            },
+        )
+    }
+}
