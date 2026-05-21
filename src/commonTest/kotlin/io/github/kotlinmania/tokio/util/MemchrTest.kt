@@ -46,7 +46,7 @@ class MemchrTest {
     }
 
     @Test
-    fun memchrAllTest() {
+    fun memchrAll() {
         val arr = UByteArray(256) { it.toUByte() }
         for (byte in 0..255) {
             assertEquals(byte, memchr(byte.toUByte(), arr))
@@ -59,7 +59,7 @@ class MemchrTest {
     }
 
     @Test
-    fun memchrEmptyTest() {
+    fun memchrEmpty() {
         val empty = UByteArray(0)
         for (byte in 0..255) {
             assertEquals(null, memchr(byte.toUByte(), empty))

@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 9/372 (2.4%)
-- **Function parity:** 50/3340 matched (target 95) — 1.5%
-- **Class/type parity:** 9/662 matched (target 16) — 1.4%
-- **Combined symbol parity:** 59/4002 matched (target 111) — 1.5%
-- **Average inline-code cosine:** 0.52 (function body across 9 matched files)
-- **Average documentation cosine:** 0.62 (doc text across 9 matched files)
+- **Files Present:** 13/372 (3.5%)
+- **Function parity:** 110/3335 matched (target 186) — 3.3%
+- **Class/type parity:** 14/662 matched (target 26) — 2.1%
+- **Combined symbol parity:** 124/3997 matched (target 212) — 3.1%
+- **Average inline-code cosine:** 0.58 (function body across 13 matched files)
+- **Average documentation cosine:** 0.68 (doc text across 13 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 7 files with <0.60 function similarity
+- **Critical Issues:** 8 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -55,6 +55,16 @@ Based on AST analysis, here are the concrete next steps.
 - **Missing types:** _none_
 - **Action:** Deep review - likely missing major functionality
 
+### 5. util.mem
+- **Similarity:** 0.75 (needs 10% improvement)
+- **Dependencies:** 13
+- **Priority Score:** 13001703.0
+- **Functions:** 15/15 matched (target 26)
+- **Missing functions:** _none_
+- **Types:** 2/2 matched (target 3)
+- **Missing types:** _none_
+- **Action:** Review and complete missing sections
+
 ## Priority 2: Port Missing High-Value Files
 
 Critical missing files (>10 dependencies):
@@ -71,19 +81,15 @@ Critical missing files (>10 dependencies):
    - Path: `sync/mutex.rs`
    - Essential for 14 other files
 
-4. **util.mem** (13 deps)
-   - Path: `io/util/mem.rs`
-   - Essential for 13 other files
-
-5. **metrics.scheduler** (11 deps)
+4. **metrics.scheduler** (11 deps)
    - Path: `runtime/metrics/scheduler.rs`
    - Essential for 11 other files
 
-6. **runtime.handle** (11 deps)
+5. **runtime.handle** (11 deps)
    - Path: `runtime/handle.rs`
    - Essential for 11 other files
 
-7. **sync.notify** (10 deps)
+6. **sync.notify** (10 deps)
    - Path: `sync/notify.rs`
    - Essential for 10 other files
 
@@ -136,7 +142,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 4)
 - **Missing types:** _none_
 
-### 5. util.error
+### 5. util.mem
+
+- **Target:** `util.Mem`
+- **Similarity:** 0.75
+- **Dependents:** 13
+- **Priority Score:** 13001703.0
+- **Functions:** 15/15 matched (target 26)
+- **Missing functions:** _none_
+- **Types:** 2/2 matched (target 3)
+- **Missing types:** _none_
+
+### 6. util.error
 
 - **Target:** `util.Error`
 - **Similarity:** 1.00
@@ -147,7 +164,29 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 0/0 matched
 - **Missing types:** _none_
 
-### 6. io.async_read
+### 7. io.ready
+
+- **Target:** `io.Ready`
+- **Similarity:** 0.77
+- **Dependents:** 7
+- **Priority Score:** 7012102.5
+- **Functions:** 19/19 matched (target 29)
+- **Missing functions:** _none_
+- **Types:** 1/2 matched
+- **Missing types:** `Output`
+
+### 8. io.interest
+
+- **Target:** `io.Interest`
+- **Similarity:** 0.50
+- **Dependents:** 7
+- **Priority Score:** 7011605.0
+- **Functions:** 14/14 matched (target 21)
+- **Missing functions:** _none_
+- **Types:** 1/2 matched
+- **Missing types:** `Output`
+
+### 9. io.async_read
 
 - **Target:** `io.AsyncRead`
 - **Similarity:** 0.40
@@ -158,7 +197,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 7. io.read_buf
+### 10. io.read_buf
 
 - **Target:** `io.ReadBuf`
 - **Similarity:** 0.53
@@ -169,19 +208,30 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 2)
 - **Missing types:** _none_
 
-### 8. util.memchr
+### 11. util.memchr
 
 - **Target:** `util.Memchr`
-- **Similarity:** 0.22
+- **Similarity:** 0.38
 - **Dependents:** 1
-- **Priority Score:** 1020407.8
-- **Functions:** 2/4 matched
-- **Missing functions:** `memchr_all`, `memchr_empty`
+- **Priority Score:** 1000406.2
+- **Functions:** 4/4 matched
+- **Missing functions:** _none_
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
-- **Tests:** 1/3 matched
+- **Tests:** 3/3 matched
 
-### 9. util.metric_atomics
+### 12. io.split
+
+- **Target:** `io.Split`
+- **Similarity:** 0.72
+- **Dependents:** 0
+- **Priority Score:** 1102.8
+- **Functions:** 10/10 matched (target 15)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 3)
+- **Missing types:** _none_
+
+### 13. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
