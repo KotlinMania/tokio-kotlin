@@ -2,7 +2,6 @@ name: CI
 
 on:
   workflow_dispatch:
-
 # Least-privilege default for any inline job in this file. The reusable
 # workflows invoked below declare their own permissions; this top-level
 # block only applies to direct jobs in ci.yml itself.
