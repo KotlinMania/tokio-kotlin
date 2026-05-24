@@ -9,31 +9,34 @@ name: "CodeQL Advanced"
 #
 # Three matrix entries cover the languages CodeQL detects in this repo:
 #   - actions             (source-only)
-#   - java-kotlin         (manual build via codeqlCompileJvm — see note)
+#   - java-kotlin         (manual build via codeqlCompileJvm — see note below)
 #   - javascript-typescript (source-only)
 #
-# For java-kotlin, the matrix-shared `Initialize CodeQL -> Perform CodeQL
+# For java-kotlin, the matrix-shared `Initialize CodeQL → Perform CodeQL
 # Analysis` flow is augmented with two conditional steps that run ONLY
 # for that language:
 #
 #   1. JDK + Gradle setup (the other two languages need no toolchain).
-#   2. A `./gradlew setupAndroidSdk codeqlCompileJvm` invocation under the CodeQL Java agent.
+#   2. A direct `./gradlew codeqlCompileJvm` invocation under
+#      JAVA_TOOL_OPTIONS=-javaagent:codeql-java-agent.jar=java,kotlin.
 #
-# This is a KMP project, so the autobuild default for java-kotlin
-# (`./gradlew testClasses`) is not the right extraction surface and
-# `build-mode: none` extracts nothing. The `setupAndroidSdk` preflight keeps
-# Android SDK resolution project-local on every host, and the `codeqlCompileJvm` Gradle task
-# compiles common/android Kotlin sources, or a sentinel source while the port
-# is still source-empty, through `K2JVMCompiler`; the CodeQL Java agent hooks
-# that JVM compiler and writes Kotlin TRAP output. That is why this file uses
-# `build-mode: manual` for java-kotlin even though autobuild is the template
-# default.
+# `codeqlCompileJvm` is a JavaExec task in build.gradle.kts that runs
+# kotlin-compiler-embeddable 2.3.21 against commonMain as a single-target
+# compile (no -Xmulti-platform, no -Xfragments). The K2 phased pipeline
+# that bypasses K2JVMCompiler.doExecute — which the CodeQL Java agent
+# hooks for Kotlin extraction — is only engaged for multiplatform-fragment
+# compiles, so a single-target invocation still dispatches through
+# doExecute and the agent's class-load hook fires. Using autobuild here
+# (the template's default for java-kotlin) would route through KGP's
+# multiplatform compileKotlinJvm and produce 0 bytes of Kotlin TRAP.
+# That's why this file uses `build-mode: manual` for java-kotlin even
+# though autobuild is the template default.
 
 on:
   schedule:
-    - cron: "0 7 * * 1"
-  workflow_dispatch:
+    - cron: '44 16 * * 0'
 
+  workflow_dispatch:
 permissions:
   contents: read
 
@@ -90,7 +93,7 @@ jobs:
           dependency-caching: true
 
       # Manual build: only java-kotlin gates this. The CodeQL Java agent
-      # is attached to every JVM in this step via JAVA_TOOL_OPTIONS -- every
+      # is attached to every JVM in this step via JAVA_TOOL_OPTIONS — every
       # conforming JVM honors -javaagent at startup independently of any
       # OS-level LD_PRELOAD tracing chain. The `java,kotlin` spec registers
       # both JavacMainInterceptor and KotlinInterceptor; the latter hooks
