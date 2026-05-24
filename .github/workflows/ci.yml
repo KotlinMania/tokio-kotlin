@@ -70,3 +70,7 @@ jobs:
     uses: ./.github/workflows/wasm.yml
     permissions:
       contents: read
+  swift:
+    uses: ./.github/workflows/swift.yml
+    permissions:
+      contents: read
