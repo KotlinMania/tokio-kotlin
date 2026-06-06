@@ -1,9 +1,7 @@
-import java.io.ByteArrayInputStream
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.util.zip.ZipInputStream
 import org.gradle.api.GradleException
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.ArchiveOperations
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.testing.AbstractTestTask
@@ -12,49 +10,110 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.gradle.process.ExecOperations
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
-import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
 import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
+import java.io.ByteArrayInputStream
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipInputStream
 
 plugins {
-    kotlin("multiplatform") version "2.3.21"
-    kotlin("plugin.serialization") version "2.3.21"
-    id("com.android.kotlin.multiplatform.library") version "9.2.1"
-    id("com.vanniktech.maven.publish") version "0.36.0"
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.kmp)
+    alias(libs.plugins.vanniktech)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
 }
 
-group = "io.github.kotlinmania"
-version = "0.1.0"
+group = providers.gradleProperty("project.group").getOrElse("io.github.kotlinmania")
+version = providers.gradleProperty("project.version").getOrElse("0.1.0-SNAPSHOT")
+val frameworkName = providers.gradleProperty("project.frameworkName").getOrElse("Unnamed")
+val projectNamespace = providers.gradleProperty("project.namespace").getOrElse("io.github.kotlinmania")
+val kotlinVersion = providers.gradleProperty("versions.kotlin").getOrElse("2.4.0")
+val isCodeqlBuild = providers.gradleProperty("kotlinmania.codeql").map(String::toBoolean).getOrElse(false)
+val commonMainBundleName = providers.gradleProperty("project.dependencies.commonMainBundle").get()
+val commonMainDependencyBundle =
+    extensions
+        .getByType(VersionCatalogsExtension::class.java)
+        .named("libs")
+        .findBundle(commonMainBundleName)
+        .orElseThrow { GradleException("Missing libs bundle '$commonMainBundleName'") }
 
-val androidCommandLineToolsRevision = "14742923"
-val projectCompileSdk = "34"
-val projectAndroidBuildTools = "36.0.0"
-val isWindowsHost = System.getProperty("os.name").lowercase().contains("windows")
+// Opt-ins shared between the top-level compilerOptions and the codeqlCompileJvm kotlinc invocation.
+val commonOptIns =
+    listOf(
+        "kotlin.time.ExperimentalTime",
+        "kotlin.concurrent.atomics.ExperimentalAtomicApi",
+        "kotlin.ExperimentalUnsignedTypes",
+    )
+
+// ============================================================================
+// Android SDK installer
+// ----------------------------------------------------------------------------
+// The Android Gradle Plugin resolves the SDK location at configuration time,
+// so the SDK must already be on disk before the `kotlin { android { ... } }`
+// block evaluates. The installer is idempotent — a .install-complete marker
+// short-circuits the download on every subsequent invocation, so warm runs
+// pay only a directory-existence check. CI runners pay a one-time cold cost
+// the first time they touch the project.
+// ============================================================================
+
+val androidCommandLineToolsRevision =
+    providers
+        .gradleProperty(
+            "android.commandLineTools.revision",
+        ).getOrElse("14742923")
+val projectCompileSdk = providers.gradleProperty("android.compileSdk").getOrElse("34")
+val projectAndroidBuildTools = providers.gradleProperty("android.buildTools").getOrElse("36.0.0")
+val osName = providers.systemProperty("os.name").get().lowercase()
+val isWindowsHost = "windows" in osName
+val isMacHost = "mac" in osName
 val androidSdkOsName =
     when {
         isWindowsHost -> "win"
-        System.getProperty("os.name").lowercase().contains("mac") -> "mac"
-        System.getProperty("os.name").lowercase().contains("linux") -> "linux"
-        else -> throw GradleException("Unsupported Android SDK setup OS: ${System.getProperty("os.name")}")
+        isMacHost -> "mac"
+        "linux" in osName -> "linux"
+        else -> throw GradleException("Unsupported Android SDK setup OS: ${providers.systemProperty("os.name").get()}")
     }
 val projectAndroidSdkDir = layout.projectDirectory.dir(".android-sdk").asFile
-val androidSdkManager = projectAndroidSdkDir.resolve(
-    if (isWindowsHost) {
-        "cmdline-tools/latest/bin/sdkmanager.bat"
-    } else {
-        "cmdline-tools/latest/bin/sdkmanager"
-    },
-)
+val androidSdkManager =
+    projectAndroidSdkDir.resolve(
+        if (isWindowsHost) {
+            "cmdline-tools/latest/bin/sdkmanager.bat"
+        } else {
+            "cmdline-tools/latest/bin/sdkmanager"
+        },
+    )
 val androidSdkInstallMarker = projectAndroidSdkDir.resolve(".install-complete")
+val requiredAndroidSdkPackageDirs =
+    listOf(
+        projectAndroidSdkDir.resolve("platform-tools"),
+        projectAndroidSdkDir.resolve("platforms/android-$projectCompileSdk"),
+        projectAndroidSdkDir.resolve("build-tools/$projectAndroidBuildTools"),
+    )
 
 fun writeAndroidLocalProperties() {
     val sdkDirPropertyValue = projectAndroidSdkDir.absolutePath.replace("\\", "/")
-    layout.projectDirectory.file("local.properties").asFile.writeText("sdk.dir=$sdkDirPropertyValue\n")
+    layout.projectDirectory
+        .file("local.properties")
+        .asFile
+        .writeText("sdk.dir=$sdkDirPropertyValue\n")
 }
+
+fun isProjectAndroidSdkInstalled(): Boolean =
+    androidSdkInstallMarker.exists() &&
+        androidSdkManager.exists() &&
+        requiredAndroidSdkPackageDirs.all { it.exists() }
 
 fun sdkManagerCommand(vararg args: String): List<String> =
     if (isWindowsHost) {
@@ -69,20 +128,16 @@ fun downloadAndroidCommandLineTools() {
     val tmpDir = projectAndroidSdkDir.resolve(".tmp/commandline-tools")
     val zipFile = tmpDir.resolve(zipName)
     val latestDir = projectAndroidSdkDir.resolve("cmdline-tools/latest")
-
     println("setup-android-sdk: downloading $url")
     tmpDir.deleteRecursively()
     tmpDir.mkdirs()
-
     try {
         URI(url).toURL().openStream().use { input ->
             Files.copy(input, zipFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
-
         latestDir.deleteRecursively()
         latestDir.mkdirs()
         val canonicalLatestDir = latestDir.canonicalFile.toPath()
-
         ZipInputStream(zipFile.inputStream().buffered()).use { zipInput ->
             generateSequence { zipInput.nextEntry }.forEach { entry ->
                 val relativeName = entry.name.removePrefix("cmdline-tools/").trimStart('/')
@@ -96,62 +151,56 @@ fun downloadAndroidCommandLineTools() {
                     } else {
                         target.parentFile.mkdirs()
                         Files.copy(zipInput, target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                        if (!isWindowsHost && relativeName.startsWith("bin/")) {
-                            target.setExecutable(true)
-                        }
+                        if (!isWindowsHost && relativeName.startsWith("bin/")) target.setExecutable(true)
                     }
                 }
                 zipInput.closeEntry()
             }
         }
-
-        if (!isWindowsHost) {
-            androidSdkManager.setExecutable(true)
-        }
+        if (!isWindowsHost) androidSdkManager.setExecutable(true)
     } finally {
         tmpDir.deleteRecursively()
     }
 }
 
 fun installProjectAndroidSdk(execOperations: ExecOperations) {
-    if (androidSdkInstallMarker.exists() && androidSdkManager.exists()) {
+    if (isProjectAndroidSdkInstalled()) {
         writeAndroidLocalProperties()
         println("setup-android-sdk: SDK already installed at $projectAndroidSdkDir")
         return
     }
-
-    if (!androidSdkManager.exists()) {
-        downloadAndroidCommandLineTools()
-    }
-
+    if (!androidSdkManager.exists()) downloadAndroidCommandLineTools()
     println("setup-android-sdk: accepting licenses")
     val licenseAnswers = "y\n".repeat(200).toByteArray(Charsets.UTF_8)
-    val licenseResult = execOperations.exec {
-        commandLine(sdkManagerCommand("--sdk_root=${projectAndroidSdkDir.absolutePath}", "--licenses"))
-        standardInput = ByteArrayInputStream(licenseAnswers)
-        isIgnoreExitValue = true
-    }
+    val licenseResult =
+        execOperations.exec {
+            commandLine(sdkManagerCommand("--sdk_root=${projectAndroidSdkDir.absolutePath}", "--licenses"))
+            standardInput = ByteArrayInputStream(licenseAnswers)
+            isIgnoreExitValue = true
+        }
     if (licenseResult.exitValue != 0) {
         throw GradleException("Android SDK license acceptance failed with exit code ${licenseResult.exitValue}")
     }
-
-    println("setup-android-sdk: installing platform-tools, android-$projectCompileSdk, build-tools;$projectAndroidBuildTools")
+    println(
+        "setup-android-sdk: installing platform-tools, android-$projectCompileSdk, build-tools;$projectAndroidBuildTools",
+    )
     val installLog = projectAndroidSdkDir.resolve("sdkmanager-install.log")
     installLog.parentFile.mkdirs()
     installLog.outputStream().use { output ->
-        val installResult = execOperations.exec {
-            commandLine(
-                sdkManagerCommand(
-                    "--sdk_root=${projectAndroidSdkDir.absolutePath}",
-                    "platform-tools",
-                    "platforms;android-$projectCompileSdk",
-                    "build-tools;$projectAndroidBuildTools",
-                ),
-            )
-            standardOutput = output
-            errorOutput = output
-            isIgnoreExitValue = true
-        }
+        val installResult =
+            execOperations.exec {
+                commandLine(
+                    sdkManagerCommand(
+                        "--sdk_root=${projectAndroidSdkDir.absolutePath}",
+                        "platform-tools",
+                        "platforms;android-$projectCompileSdk",
+                        "build-tools;$projectAndroidBuildTools",
+                    ),
+                )
+                standardOutput = output
+                errorOutput = output
+                isIgnoreExitValue = true
+            }
         if (installResult.exitValue != 0) {
             throw GradleException(
                 "Android SDK package install failed with exit code ${installResult.exitValue}. " +
@@ -159,144 +208,156 @@ fun installProjectAndroidSdk(execOperations: ExecOperations) {
             )
         }
     }
-    println("setup-android-sdk: install log at $installLog")
-
     writeAndroidLocalProperties()
     androidSdkInstallMarker.writeText("")
-    println("setup-android-sdk: done")
-    println("  SDK at:     $projectAndroidSdkDir")
-    println("  configured: local.properties -> $projectAndroidSdkDir")
+    println("setup-android-sdk: done; SDK at $projectAndroidSdkDir")
 }
 
-// The Android Gradle plugin resolves the SDK location while Gradle builds the
-// task graph, before any task executes, so a project-local Android SDK must
-// already be installed by the time configuration reaches the android target.
-// This configuration-time installer is idempotent and always writes
-// local.properties to this repo's own .android-sdk path.
-val androidSdkExecOperations = serviceOf<ExecOperations>()
-installProjectAndroidSdk(androidSdkExecOperations)
+writeAndroidLocalProperties()
 
+val ensureAndroidSdk by tasks.registering {
+    group = "setup"
+    description = "Ensures the project-local Android SDK is installed (idempotent)."
+    onlyIf("Android SDK already installed at $projectAndroidSdkDir") { !isProjectAndroidSdkInstalled() }
+    doLast {
+        installProjectAndroidSdk(serviceOf())
+    }
+}
+
+tasks.matching { it.name == "compileAndroidMain" }.configureEach {
+    dependsOn(ensureAndroidSdk)
+}
+
+val jvmToolchainVersion = providers.gradleProperty("jvm.toolchain").getOrElse("21").toInt()
+
+// ============================================================================
+// kotlin { … }
+// ----------------------------------------------------------------------------
+// watchosArm32: retired by workspace product policy (kmp-watchosarm32-retirement
+//   per AGENTS.md §5.5.1, effective 2026-05-24). Upstream KGP still ships it as
+//   Tier 2 — this is a deliberate product decision, not a framework deprecation.
+// Deprecated by KGP since 2.3.20 (never re-add): macosX64, tvosX64, watchosX64.
+// Every other target is built unconditionally — KotlinMania supports the full
+//   target surface, so there are NO opt-in build gates. The build gate is the
+//   contract that forces every current KotlinMania target to compile.
+// ============================================================================
 kotlin {
+    jvmToolchain(jvmToolchainVersion)
+
     applyDefaultHierarchyTemplate()
 
-    sourceSets.all {
-        languageSettings.optIn("kotlin.time.ExperimentalTime")
-        languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi")
-        languageSettings.optIn("kotlin.ExperimentalUnsignedTypes")
-    }
-
     compilerOptions {
-        allWarningsAsErrors.set(true)
+        languageVersion.set(KotlinVersion.KOTLIN_2_4)
+        apiVersion.set(KotlinVersion.KOTLIN_2_4)
+        allWarningsAsErrors.set(!isCodeqlBuild)
+        optIn.addAll(commonOptIns)
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        freeCompilerArgs.add("-Xsuppress-version-warnings")
     }
 
-    val xcf = XCFramework("Tokio")
+    val xcf = XCFramework(frameworkName)
+    val frameworkBundleId = projectNamespace
 
-    macosArm64 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
-    iosArm64 {
+    // Local helper: attach this target's framework to the XCFramework.
+    fun KotlinNativeTarget.addToXcf(static: Boolean = false) {
         binaries.framework {
-            baseName = "Tokio"
-            isStatic = true
+            baseName = frameworkName
+            if (static) isStatic = true
             xcf.add(this)
-        }
-    }
-    iosSimulatorArm64 {
-        binaries.framework {
-            baseName = "Tokio"
-            isStatic = true
-            xcf.add(this)
-        }
-    }
-    iosX64 {
-        binaries.framework {
-            baseName = "Tokio"
-            isStatic = true
-            xcf.add(this)
+            binaryOption("bundleId", frameworkBundleId)
         }
     }
 
-    tvosArm64 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
-    tvosSimulatorArm64 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
+    // Apple — Tier 1/2 targets
+    macosArm64 { addToXcf() }
+    iosArm64 { addToXcf(static = true) }
+    iosSimulatorArm64 { addToXcf(static = true) }
+    tvosArm64 { addToXcf() }
+    tvosSimulatorArm64 { addToXcf() }
+    watchosArm64 { addToXcf() }
+    watchosDeviceArm64 { addToXcf() }
+    watchosSimulatorArm64 { addToXcf() }
 
-    watchosArm32 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
-    watchosArm64 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
-    watchosDeviceArm64 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
-    watchosSimulatorArm64 {
-        binaries.framework { baseName = "Tokio"; xcf.add(this) }
-    }
+    // iosX64: Intel Mac simulator. Tier 3 in Kotlin/Native but NOT deprecated —
+    // Apple still ships x86_64 iOS simulator runtimes, so it is always built.
+    iosX64 { addToXcf(static = true) }
 
+    // Other native — Tier 1/2
     linuxX64()
     linuxArm64()
     mingwX64()
 
+    // Android NDK — always built (full target surface, no opt-in gate).
     androidNativeArm32()
     androidNativeArm64()
     androidNativeX86()
     androidNativeX64()
 
+    // Web
     js {
         browser()
         nodejs()
     }
+
+    // wasmJs is Stable as of Kotlin 2.2; @OptIn may be removable — verify before dropping on wasmWasi.
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         nodejs()
     }
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmWasi {
         nodejs()
     }
 
+    // Swift Export bridge — Experimental per Kotlin 2.4.0 release notes.
+    // KGP 2.4.0 does not expose a public opt-in annotation; warnings (if any)
+    // arrive via KotlinToolingDiagnostics, not @RequiresOptIn.
     swiftExport {
-        moduleName = "Tokio"
-        flattenPackage = "io.github.kotlinmania.tokio"
-    }
-
-    android {
-        namespace = "io.github.kotlinmania.tokio"
-        compileSdk = 34
-        minSdk = 24
-        withHostTestBuilder {}.configure {}
-        withDeviceTestBuilder {
-            sourceSetTreeName = "test"
+        moduleName = frameworkName
+        flattenPackage = projectNamespace
+        @OptIn(org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl::class)
+        configure {
+            settings.put("enableCoroutinesSupport", "true")
         }
     }
 
-    jvm()
+    // Android KMP library. Block name is `android` — `androidLibrary` is deprecated in current KGP.
+    android {
+        namespace = projectNamespace
+        compileSdk = projectCompileSdk.toInt()
+        minSdk = providers.gradleProperty("android.minSdk").getOrElse("24").toInt()
+        withHostTestBuilder {}.configure {}
+        withDeviceTestBuilder { sourceSetTreeName = "test" }
+    }
+
+    // JVM — jvmTarget derived from the same toolchain property so they can't drift.
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.fromTarget(jvmToolchainVersion.toString()))
+        }
+    }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.4.0")
-            }
+        commonMain.dependencies {
+            implementation(commonMainDependencyBundle)
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-            }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
-
     }
-    jvmToolchain(21)
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    if (name.startsWith("compileSwiftExport")) {
+        compilerOptions.allWarningsAsErrors.set(false)
+    }
+}
+
+// ============================================================================
+// Test logging
+// ============================================================================
 tasks.withType<AbstractTestTask>().configureEach {
     testLogging {
         events(
@@ -315,85 +376,136 @@ tasks.withType<AbstractTestTask>().configureEach {
     }
 }
 
-rootProject.extensions.configure<NodeJsEnvSpec>("kotlinNodeJsSpec") {
-    version.set("24.15.0")
+// ============================================================================
+// Static analysis: Detekt + Ktlint
+// ============================================================================
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    autoCorrect = false
+    source.setFrom(files("src"))
+    config.setFrom(files("detekt.yml"))
+    parallel = true
 }
 
-rootProject.extensions.configure<WasmNodeJsEnvSpec>("kotlinWasmNodeJsSpec") {
-    version.set("24.15.0")
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        sarif.required.set(true)
+        txt.required.set(false)
+        xml.required.set(false)
+    }
 }
 
-rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") {
-    version.set("1.22.22")
+ktlint {
+    debug.set(false)
+    verbose.set(false)
+    android.set(false)
+    outputToConsole.set(true)
+    ignoreFailures.set(false)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.SARIF)
+    }
+    filter {
+        exclude("**/build/**")
+        include("**/src/**/kotlin/**")
+    }
 }
 
-rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") {
-    version.set("1.22.22")
+tasks.named("check") {
+    dependsOn(tasks.withType<io.gitlab.arturbosch.detekt.Detekt>())
+    dependsOn(tasks.named("ktlintCheck"))
+    // Android host unit tests run here alongside the tests that check -> allTests
+    // already executes (jvm, macosArm64, the Apple simulators, js, wasmJs,
+    // wasmWasi). Test EXECUTION belongs to check; target BUILD coverage belongs
+    // to the explicit all-target build set below.
+    dependsOn("testAndroidHostTest")
+    // Swift Export smoke test is required; it must not self-skip.
+    dependsOn("swiftExportSmokeTest")
 }
+
+// ============================================================================
+// JS / Wasm toolchain pins
+// ============================================================================
+val nodeVersion = providers.gradleProperty("node.version").getOrElse("24.15.0")
+val wasmNodeVersion = providers.gradleProperty("wasm.node.version").getOrElse(nodeVersion)
+val yarnVersion = providers.gradleProperty("yarn.version").getOrElse("1.22.22")
+val wasmYarnVersion = providers.gradleProperty("wasm.yarn.version").getOrElse(yarnVersion)
+
+// webpack is pinned in kotlin-js-store/package.json — the single source of truth
+// that Dependabot updates natively. Gradle reads the version from there so the
+// yarn resolution and the NodeJsRootExtension pin always track the checked-in
+// store; a Dependabot bump of package.json/yarn.lock is honored rather than
+// overridden. (These two values previously lived in gradle.properties, which
+// Dependabot cannot see, so a bump there would silently revert the build.)
+@Suppress("UNCHECKED_CAST")
+val webpackVersion: String =
+    (groovy.json.JsonSlurper().parse(rootProject.file("kotlin-js-store/package.json")) as Map<String, Any>)
+        .let { it["dependencies"] as Map<String, Any> }["webpack"] as String
+
+rootProject.extensions.configure<NodeJsEnvSpec>("kotlinNodeJsSpec") { version.set(nodeVersion) }
+rootProject.extensions.configure<WasmNodeJsEnvSpec>("kotlinWasmNodeJsSpec") { version.set(wasmNodeVersion) }
+rootProject.extensions.configure<YarnRootEnvSpec>("kotlinYarnSpec") { version.set(yarnVersion) }
+rootProject.extensions.configure<WasmYarnRootEnvSpec>("kotlinWasmYarnSpec") { version.set(wasmYarnVersion) }
 
 rootProject.extensions.configure<YarnRootExtension>("kotlinYarn") {
-    resolution("diff", "8.0.3")
-    resolution("**/diff", "8.0.3")
-    resolution("fast-uri", "3.1.2")
-    resolution("**/fast-uri", "3.1.2")
-    resolution("serialize-javascript", "7.0.5")
-    resolution("**/serialize-javascript", "7.0.5")
-    resolution("webpack", "5.106.2")
-    resolution("**/webpack", "5.106.2")
-    resolution("follow-redirects", "1.16.0")
-    resolution("**/follow-redirects", "1.16.0")
-    resolution("lodash", "4.18.1")
-    resolution("**/lodash", "4.18.1")
-    resolution("ajv", "8.20.0")
-    resolution("**/ajv", "8.20.0")
-    resolution("brace-expansion", "5.0.6")
-    resolution("**/brace-expansion", "5.0.6")
-    resolution("flatted", "3.4.2")
-    resolution("**/flatted", "3.4.2")
-    resolution("minimatch", "10.2.5")
-    resolution("**/minimatch", "10.2.5")
-    resolution("picomatch", "4.0.4")
-    resolution("**/picomatch", "4.0.4")
-    resolution("qs", "6.15.2")
-    resolution("**/qs", "6.15.2")
-    resolution("socket.io-parser", "4.2.6")
-    resolution("**/socket.io-parser", "4.2.6")
-    resolution("ws", "8.20.1")
-    resolution("**/ws", "8.20.1")
+    project.properties
+        .filterKeys { it.startsWith("yarn.resolution.") }
+        .forEach { (key, value) ->
+            val pkg = key.removePrefix("yarn.resolution.")
+            val ver = value as? String ?: return@forEach
+            resolution(pkg, ver)
+            resolution("**/$pkg", ver)
+        }
+    // webpack resolution sourced from kotlin-js-store/package.json (see above)
+    // rather than a yarn.resolution.webpack property, so it can never override a
+    // Dependabot bump of the store.
+    resolution("webpack", webpackVersion)
+    resolution("**/webpack", webpackVersion)
 }
 
+val patchedKarmaWebpackPackage =
+    rootProject.layout.projectDirectory
+        .dir("gradle/npm/karma-webpack")
+        .asFile.absolutePath
+        .replace("\\", "/")
 
-val patchedKarmaWebpackPackage = rootProject.layout.projectDirectory.dir("gradle/npm/karma-webpack").asFile.absolutePath.replace("\\", "/")
-
+// TODO: NodeJsRootExtension.versions.* is deprecated and will be removed when the spec-based
+//       NodeJsEnvSpec API gains equivalent properties. Track KGP release notes before removing.
 rootProject.extensions.configure<NodeJsRootExtension>("kotlinNodeJs") {
-    versions.webpack.version = "5.106.2"
-    versions.webpackCli.version = "7.0.2"
-    versions.karma.version = "npm:karma-maintained@6.4.7"
+    versions.webpack.version = webpackVersion
+    versions.webpackCli.version = providers.gradleProperty("node.webpackCli.version").getOrElse("7.0.2")
+    versions.karma.version = providers.gradleProperty("node.karma.version").getOrElse("npm:karma-maintained@6.4.7")
     versions.karmaWebpack.version = "file:$patchedKarmaWebpackPackage"
-    versions.mocha.version = "12.0.0-beta-10"
-    versions.kotlinWebHelpers.version = "3.1.0"
+    versions.mocha.version = providers.gradleProperty("node.mocha.version").getOrElse("12.0.0-beta-10")
+    versions.kotlinWebHelpers.version = providers.gradleProperty("node.kotlinWebHelpers.version").getOrElse("3.1.0")
 }
 
+// ============================================================================
+// Maven Central publishing
+// ============================================================================
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
-
-    coordinates(group.toString(), "tokio-kotlin", version.toString())
-
+    if (project.findProperty("RELEASE_SIGNING_ENABLED") != "false") {
+        signAllPublications()
+    }
+    val projectName = providers.gradleProperty("project.name").getOrElse("unnamed-project")
+    coordinates(group.toString(), projectName, version.toString())
     pom {
-        name.set("tokio-kotlin")
-        description.set("Kotlin Multiplatform port of tokio-rs/tokio - An event-driven, non-blocking I/O platform for writing asynchronous I/O backed applications")
+        name.set(projectName)
+        description.set(providers.gradleProperty("project.pom.description").getOrElse(""))
         inceptionYear.set("2026")
-        url.set("https://github.com/KotlinMania/tokio-kotlin")
-
+        url.set("https://github.com/KotlinMania/$projectName")
         licenses {
             license {
-                name.set("MIT")
-                url.set("https://opensource.org/licenses/MIT")
+                name.set(providers.gradleProperty("project.pom.licenseName").getOrElse("MIT"))
+                url.set(
+                    providers.gradleProperty("project.pom.licenseUrl").getOrElse("https://opensource.org/licenses/MIT"),
+                )
                 distribution.set("repo")
             }
         }
-
         developers {
             developer {
                 id.set("sydneyrenee")
@@ -402,366 +514,312 @@ mavenPublishing {
                 url.set("https://github.com/sydneyrenee")
             }
         }
-
         scm {
-            url.set("https://github.com/KotlinMania/tokio-kotlin")
-            connection.set("scm:git:git://github.com/KotlinMania/tokio-kotlin.git")
-            developerConnection.set("scm:git:ssh://github.com/KotlinMania/tokio-kotlin.git")
+            url.set("https://github.com/KotlinMania/$projectName")
+            connection.set("scm:git:git://github.com/KotlinMania/$projectName.git")
+            developerConnection.set("scm:git:ssh://github.com/KotlinMania/$projectName.git")
         }
     }
 }
 
-// ---------------------------------------------------------------------------
-// CodeQL Java/Kotlin extraction task
-//
-// .github/workflows/codeql.yml invokes `./gradlew codeqlCompileJvm` to feed
-// kotlinc-compiled commonMain through the CodeQL Java agent.
-val codeqlKotlinc: Configuration by configurations.creating {
-    description = "Kotlin compiler (CodeQL extraction target only - not published)"
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
+// ============================================================================
+// CodeQL extraction
+// ============================================================================
+val codeqlKotlincScope =
+    configurations.dependencyScope("codeqlKotlinc") {
+        description = "Kotlin compiler (CodeQL extraction target only)"
+    }
+val codeqlSourceScope =
+    configurations.dependencyScope("codeqlSourceClasspath") {
+        description = "Runtime classpath for CodeQL extraction of commonMain sources"
+    }
+val codeqlAarScope =
+    configurations.dependencyScope("codeqlAndroidAar") {
+        description = "Android AAR artifacts for CodeQL dependency classpath extraction"
+    }
+val codeqlKotlincFiles =
+    configurations.resolvable("codeqlKotlincFiles") {
+        extendsFrom(codeqlKotlincScope.get())
+    }
+val codeqlSourceFiles =
+    configurations.resolvable("codeqlSourceFiles") {
+        extendsFrom(codeqlSourceScope.get())
+    }
+val codeqlAarFiles =
+    configurations.resolvable("codeqlAarFiles") {
+        extendsFrom(codeqlAarScope.get())
+    }
 
-val codeqlSourceClasspath: Configuration by configurations.creating {
-    description = "Runtime classpath for CodeQL extraction of commonMain sources"
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
-
-val codeqlAndroidAar: Configuration by configurations.creating {
-    description = "Android AAR artifacts for CodeQL classpath extraction (classes.jar only)"
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
+val codeqlLanguageVersion =
+    providers
+        .gradleProperty("kotlin.languageVersion")
+        .getOrElse(kotlinVersion.split('.').take(2).joinToString("."))
+val codeqlApiVersion = providers.gradleProperty("kotlin.apiVersion").getOrElse(codeqlLanguageVersion)
+val codeqlKotlinSourceSetNames =
+    providers
+        .gradleProperty("project.codeql.kotlinSourceSets")
+        .getOrElse("commonMain")
+        .splitToSequence(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .toList()
+val codeqlKotlinCommonSourceSetNames =
+    providers
+        .gradleProperty("project.codeql.kotlinCommonSourceSets")
+        .getOrElse("commonMain")
+        .splitToSequence(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .toList()
 
 dependencies {
-    codeqlKotlinc("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.3.21")
-    codeqlSourceClasspath("org.jetbrains.kotlin:kotlin-stdlib:2.3.21")
-    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0")
-    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0")
-    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.11.0")
-    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-datetime-jvm:0.8.0")
-    codeqlSourceClasspath("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.4.0")
+    val codeqlKotlinVersion = providers.gradleProperty("codeql.kotlin.version").getOrElse(kotlinVersion)
+    add("codeqlKotlinc", "org.jetbrains.kotlin:kotlin-compiler-embeddable:$codeqlKotlinVersion")
+
+    providers
+        .gradleProperty("project.dependencies.codeqlSourceClasspath")
+        .getOrElse("")
+        .splitToSequence(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .forEach { add("codeqlSourceClasspath", it) }
+
+    providers
+        .gradleProperty("project.dependencies.codeqlAndroidAar")
+        .getOrElse("")
+        .splitToSequence(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .forEach { add("codeqlAndroidAar", it) }
 }
 
-val codeqlCompileJvm = tasks.register<JavaExec>("codeqlCompileJvm") {
-    description =
-        "Compile commonMain Kotlin sources with kotlinc 2.3.21 for CodeQL Java/Kotlin extraction."
-    group = "verification"
-
-    classpath(codeqlKotlinc)
-    mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
-
-    val outDir = layout.buildDirectory.dir("classes/kotlin/codeql-jvm")
-    val aarExtractDir = layout.buildDirectory.dir("codeql/android-aar")
-    val commonSources = fileTree("src/commonMain/kotlin") { include("**/*.kt") }
-    val platformSources = fileTree("src/androidMain/kotlin") { include("**/*.kt") }
-    val sources = files(commonSources, platformSources)
-    val sentinelDir = layout.buildDirectory.dir("generated/codeql-empty-source")
-    inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE)
-    inputs.files(codeqlSourceClasspath).withNormalizer(ClasspathNormalizer::class.java)
-    inputs.files(codeqlAndroidAar).withNormalizer(ClasspathNormalizer::class.java)
-    outputs.dir(outDir)
-    outputs.dir(aarExtractDir)
-    outputs.dir(sentinelDir)
-
-    doFirst {
-        outDir.get().asFile.mkdirs()
-        sentinelDir.get().asFile.deleteRecursively()
-        val extractedJars = mutableListOf<File>()
-        for (aar in codeqlAndroidAar.resolve()) {
-            val extractTarget = aarExtractDir.get().asFile.resolve(aar.nameWithoutExtension)
-            extractTarget.mkdirs()
-            copy {
-                from(zipTree(aar))
-                include("classes.jar")
-                into(extractTarget)
-            }
-            val classesJar = extractTarget.resolve("classes.jar")
-            if (classesJar.exists()) {
-                extractedJars += classesJar
-            }
-        }
-        val fullClasspath =
-            (codeqlSourceClasspath.resolve() + extractedJars)
-                .joinToString(File.pathSeparator) { it.absolutePath }
-        val commonSourceFiles = commonSources.files.toMutableList()
-        val sourceFiles = sources.files.toMutableList()
-        if (sourceFiles.isEmpty()) {
-            val sentinelFile =
-                sentinelDir.get().asFile.resolve("io/github/kotlinmania/tokio/codeql/CodeqlEmptySource.kt")
-            sentinelFile.parentFile.mkdirs()
-            sentinelFile.writeText(
-                """
-                // Auto-generated. Present so codeqlCompileJvm has at least
-                // one Kotlin source to feed kotlinc; replaced by real
-                // commonMain content once porting begins.
-                package io.github.kotlinmania.tokio.codeql
-
-                object CodeqlEmptySource
-                """.trimIndent(),
+val codeqlCompileJvm =
+    tasks.register<JavaExec>("codeqlCompileJvm") {
+        description =
+            "Compile ${codeqlKotlinSourceSetNames.joinToString(",")} Kotlin sources " +
+            "with kotlinc $codeqlLanguageVersion for CodeQL Java/Kotlin extraction."
+        group = "verification"
+        classpath(codeqlKotlincFiles)
+        mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
+        // Inject services at config time — config-cache safe; project.copy/zipTree in a task
+        // action would violate https://docs.gradle.org/9.5.1/userguide/configuration_cache.html
+        val fs = serviceOf<FileSystemOperations>()
+        val archives = serviceOf<ArchiveOperations>()
+        val outDir = layout.buildDirectory.dir("classes/kotlin/codeql-jvm")
+        val aarExtractDir = layout.buildDirectory.dir("codeql/android-aar")
+        val commonSources =
+            files(
+                codeqlKotlinCommonSourceSetNames.map { sourceSetName ->
+                    fileTree("src/$sourceSetName/kotlin") { include("**/*.kt") }
+                },
             )
-            commonSourceFiles += sentinelFile
-            sourceFiles += sentinelFile
+        val sources =
+            files(
+                codeqlKotlinSourceSetNames.map { sourceSetName ->
+                    fileTree("src/$sourceSetName/kotlin") { include("**/*.kt") }
+                },
+            )
+        inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE)
+        inputs.files(commonSources).withPathSensitivity(PathSensitivity.RELATIVE)
+        inputs.files(codeqlSourceFiles).withNormalizer(ClasspathNormalizer::class.java)
+        inputs.files(codeqlAarFiles).withNormalizer(ClasspathNormalizer::class.java)
+        outputs.dir(outDir)
+        outputs.dir(aarExtractDir)
+        doFirst {
+            outDir.get().asFile.mkdirs()
+            val extractedJars =
+                codeqlAarFiles.get().resolve().mapNotNull { aar ->
+                    val extractTarget = aarExtractDir.get().asFile.resolve(aar.nameWithoutExtension)
+                    extractTarget.mkdirs()
+                    fs.copy {
+                        from(archives.zipTree(aar))
+                        include("classes.jar")
+                        into(extractTarget)
+                    }
+                    extractTarget.resolve("classes.jar").takeIf { it.exists() }
+                }
+            val fullClasspath =
+                (codeqlSourceFiles.get().resolve() + extractedJars)
+                    .joinToString(File.pathSeparator) { it.absolutePath }
+            val commonSourceFiles = commonSources.files.toMutableList()
+            require(commonSourceFiles.isNotEmpty()) {
+                "project.codeql.kotlinCommonSourceSets must resolve to at least one Kotlin source file"
+            }
+            val sourceFiles = sources.files.toMutableList()
+            require(sourceFiles.isNotEmpty()) {
+                "project.codeql.kotlinSourceSets must resolve to at least one Kotlin source file"
+            }
+            args = listOf(
+                "-d",
+                outDir.get().asFile.absolutePath,
+                "-classpath",
+                fullClasspath,
+                "-jvm-target",
+                jvmToolchainVersion.toString(),
+                "-no-stdlib",
+                "-no-reflect",
+                "-language-version",
+                codeqlLanguageVersion,
+                "-api-version",
+                codeqlApiVersion,
+                "-Xmulti-platform",
+                "-Xcommon-sources=${commonSourceFiles.joinToString(",") { it.absolutePath }}",
+                "-Xexpect-actual-classes",
+            ) + commonOptIns.flatMap { listOf("-opt-in", it) } + sourceFiles.map { it.absolutePath }
         }
-        args = listOf(
-            "-d", outDir.get().asFile.absolutePath,
-            "-classpath", fullClasspath,
-            "-jvm-target", "21",
-            "-no-stdlib",
-            "-no-reflect",
-            "-language-version", "2.3",
-            "-api-version", "2.3",
-            "-Xmulti-platform",
-            "-Xcommon-sources=${commonSourceFiles.joinToString(",") { it.absolutePath }}",
-            "-Xexpect-actual-classes",
-            "-opt-in", "kotlin.time.ExperimentalTime",
-            "-opt-in", "kotlin.concurrent.atomics.ExperimentalAtomicApi",
-            "-opt-in", "kotlin.ExperimentalUnsignedTypes",
-        ) + sourceFiles.map { it.absolutePath }
     }
-}
+
+// ============================================================================
+// Tasks
+// ============================================================================
 
 tasks.register("setupAndroidSdk") {
     group = "setup"
-    description = "Downloads and configures the project-local Android SDK."
-    doLast {
-        installProjectAndroidSdk(androidSdkExecOperations)
-    }
+    description = "Downloads and configures the project-local Android SDK. (Alias for ensureAndroidSdk)"
+    dependsOn("ensureAndroidSdk")
 }
 
-tasks.register("test") {
+// Explicit test runner. Named hostTests to avoid shadowing the KMP allTests
+// lifecycle task. Do not use findByName/mapNotNull here: missing test tasks
+// mean the target surface drifted and must fail loudly.
+tasks.register("hostTests") {
     group = "verification"
-    description =
-        "Runs the host-portable test suite (macOS + JS + WasmJS + Android unit). " +
-        "Non-host native targets (mingwX64, linuxX64) only run on their own host."
-
-    val defaultTestTasks = listOf(
-        "macosArm64Test",
+    description = "Runs the required real test suite (jvm, macosArm64, js, wasmJs, wasmWasi, android host)."
+    dependsOn(
         "jvmTest",
+        "macosArm64Test",
         "jsNodeTest",
         "wasmJsNodeTest",
-        "compileAndroidMain",
-        "assembleUnitTest",
+        "wasmWasiNodeTest",
+        "testAndroidHostTest",
     )
-
-    dependsOn(defaultTestTasks.mapNotNull { taskName -> tasks.findByName(taskName) })
 }
 
-// The generated Wasm-WASI Node test runner cannot see the filesystem unless
-// the project directory is preopened. Patch the runner before wasmWasiNodeTest.
-val patchWasmWasiNodePreopens = tasks.register("patchWasmWasiNodePreopens") {
-    description = "Preopen the project directory for the generated Wasm-WASI Node test runner."
+// Swift Export smoke test — produces the SPM package via embedSwiftExportForXcode
+// (spawned with the Xcode-style env it requires) and runs `swift test` against it,
+// so Swift Export breakage surfaces locally, not only in the swift.yml CI job.
+// Pattern mirrors kasuari-kotlin. This task is part of the build contract and
+// must fail rather than skip when the required toolchain is unavailable.
+tasks.register("swiftExportSmokeTest") {
     group = "verification"
-    dependsOn("compileTestDevelopmentExecutableKotlinWasmWasi")
+    description = "Builds the Swift Export SPM package and runs swift test against it."
     outputs.upToDateWhen { false }
 
     doLast {
-        val runnerFile = layout.buildDirectory.file(
-            "compileSync/wasmWasi/test/testDevelopmentExecutable/kotlin/${rootProject.name}-test.mjs",
-        ).get().asFile
-        if (!runnerFile.exists()) {
-            // No Wasm-WASI test runner was generated (the repo has no
-            // wasmWasi test sources), so there is nothing to preopen.
-            return@doLast
+        val execOperations = serviceOf<ExecOperations>()
+        val swiftBuildDir =
+            layout.buildDirectory
+                .dir("swift-test")
+                .get()
+                .asFile
+                .absolutePath
+        execOperations
+            .exec {
+                workingDir = projectDir
+                commandLine(
+                    "./gradlew",
+                    "embedSwiftExportForXcode",
+                    "--no-configuration-cache",
+                    "--no-daemon",
+                    "--console=plain",
+                )
+                environment(
+                    mapOf(
+                        "BUILT_PRODUCTS_DIR" to swiftBuildDir,
+                        "TARGET_BUILD_DIR" to swiftBuildDir,
+                        "SDK_NAME" to "macosx",
+                        "CONFIGURATION" to "Debug",
+                        "ARCHS" to "arm64",
+                        "FRAMEWORKS_FOLDER_PATH" to "Frameworks",
+                        "MACOSX_DEPLOYMENT_TARGET" to "14.0",
+                        "DEPLOYMENT_TARGET_SETTING_NAME" to "MACOSX_DEPLOYMENT_TARGET",
+                    ),
+                )
+            }.assertNormalExitValue()
+
+        val generatedPackageSwift =
+            layout.buildDirectory
+                .file("SPMPackage/macosArm64/Debug/Package.swift")
+                .get()
+                .asFile
+        if (generatedPackageSwift.exists()) {
+            val text = generatedPackageSwift.readText()
+            if (!text.contains("platforms:")) {
+                generatedPackageSwift.writeText(
+                    text.replaceFirst(
+                        Regex("(name:\\s*\"[^\"]*\",)"),
+                        "\$1\n    platforms: [.macOS(.v14)],",
+                    ),
+                )
+            }
         }
-        val text = runnerFile.readText()
-        val withCwdImport = text.replace(
-            "import { argv, env } from 'node:process';",
-            "import { argv, env, cwd } from 'node:process';",
-        )
-        val patched = withCwdImport.replace(
-            "const wasi = new WASI({ version: 'preview1', args: argv, env, });",
-            "const wasi = new WASI({ version: 'preview1', args: argv, env, preopens: { '/': cwd() }, });",
-        )
-        runnerFile.writeText(patched)
+
+        execOperations
+            .exec {
+                workingDir = layout.projectDirectory.dir("swift-test-harness").asFile
+                commandLine("swift", "test")
+            }.assertNormalExitValue()
     }
 }
 
-tasks.named("wasmWasiNodeTest") {
-    dependsOn(patchWasmWasiNodePreopens)
-}
+// ============================================================================
+// `build` aggregate
+// ----------------------------------------------------------------------------
+// Every configured native target, unconditionally. This is the audit contract —
+// it must mirror the kotlin { } target block exactly. watchosArm32 is the only
+// retired native target (see §5.5.1); everything else MUST build.
+// Do not add a dynamic tasks.matching fallback here: copied templates must make
+// the target surface explicit so missing declarations fail loudly in review.
+// ============================================================================
+val nativeTargetNames =
+    listOf(
+        "androidNativeArm32",
+        "androidNativeArm64",
+        "androidNativeX64",
+        "androidNativeX86",
+        "iosArm64",
+        "iosSimulatorArm64",
+        "iosX64",
+        "linuxArm64",
+        "linuxX64",
+        "macosArm64",
+        "mingwX64",
+        "tvosArm64",
+        "tvosSimulatorArm64",
+        "watchosArm64",
+        "watchosDeviceArm64",
+        "watchosSimulatorArm64",
+    )
 
-val xcodeSwiftExportEnvironmentNames = listOf(
-    "SDK_NAME",
-    "CONFIGURATION",
-    "TARGET_BUILD_DIR",
-    "BUILT_PRODUCTS_DIR",
-    "ARCHS",
-    "FRAMEWORKS_FOLDER_PATH",
-    "DEPLOYMENT_TARGET_SETTING_NAME",
-)
-
-fun hasXcodeSwiftExportEnvironment(): Boolean {
-    if (!xcodeSwiftExportEnvironmentNames.all { !System.getenv(it).isNullOrBlank() }) {
-        return false
-    }
-
-    val deploymentTargetSettingName = System.getenv("DEPLOYMENT_TARGET_SETTING_NAME")
-    return !System.getenv(deploymentTargetSettingName).isNullOrBlank()
-}
-
-val swiftExportTaskDirectlyRequested =
-    gradle.startParameter.taskNames.any { it == "embedSwiftExportForXcode" || it.endsWith(":embedSwiftExportForXcode") }
-
-tasks.matching { it.name == "embedSwiftExportForXcode" }.configureEach {
-    onlyIf {
-        val hasXcodeEnvironment = hasXcodeSwiftExportEnvironment()
-        if (!hasXcodeEnvironment && !swiftExportTaskDirectlyRequested) {
-            logger.lifecycle("embedSwiftExportForXcode: skipped because Xcode environment variables are not present")
+val fullTargetBuildTaskNames =
+    buildSet {
+        addAll(
+            listOf(
+                "compileAndroidMain",
+                "compileAndroidHostTest",
+                "compileAndroidDeviceTest",
+                "assembleAndroidMain",
+                "assembleUnitTest",
+                "assembleAndroidTest",
+                "assembleAndroidDeviceTest",
+                "jvmMainClasses",
+                "jvmTestClasses",
+                "jsMainClasses",
+                "jsTestClasses",
+                "wasmJsMainClasses",
+                "wasmJsTestClasses",
+                "wasmWasiMainClasses",
+                "wasmWasiTestClasses",
+                "swiftExportSmokeTest",
+                "assemble${frameworkName}XCFramework",
+            ),
+        )
+        for (target in nativeTargetNames) {
+            add("${target}Binaries")
+            add("${target}TestBinaries")
         }
-        hasXcodeEnvironment || swiftExportTaskDirectlyRequested
     }
-}
-
-val fullTargetBuildTasks = listOf(
-    "compileAndroidMain",
-    "compileAndroidHostTest",
-    "compileAndroidDeviceTest",
-    "assembleAndroidMain",
-    "assembleAndroidHostTest",
-    "assembleAndroidDeviceTest",
-    "assembleUnitTest",
-    "assembleAndroidTest",
-    "testAndroidHostTest",
-    "jvmMainClasses",
-    "jvmTestClasses",
-    "jvmTest",
-    "jsMainClasses",
-    "jsTestClasses",
-    "jsBrowserTest",
-    "jsNodeTest",
-    "jsTest",
-    "wasmJsMainClasses",
-    "wasmJsTestClasses",
-    "wasmJsBrowserTest",
-    "wasmJsNodeTest",
-    "wasmJsTest",
-    "wasmWasiMainClasses",
-    "wasmWasiTestClasses",
-    "wasmWasiNodeTest",
-    "wasmWasiTest",
-    "androidNativeArm32Binaries",
-    "androidNativeArm32TestBinaries",
-    "androidNativeArm64Binaries",
-    "androidNativeArm64TestBinaries",
-    "androidNativeX64Binaries",
-    "androidNativeX64TestBinaries",
-    "androidNativeX86Binaries",
-    "androidNativeX86TestBinaries",
-    "iosArm64Binaries",
-    "iosArm64TestBinaries",
-    "iosSimulatorArm64Binaries",
-    "iosSimulatorArm64TestBinaries",
-    "iosX64Binaries",
-    "iosX64TestBinaries",
-    "linuxArm64Binaries",
-    "linuxArm64TestBinaries",
-    "linuxX64Binaries",
-    "linuxX64TestBinaries",
-    "linuxX64Test",
-    "macosArm64Binaries",
-    "macosArm64TestBinaries",
-    "macosArm64Test",
-    "mingwX64Binaries",
-    "mingwX64TestBinaries",
-    "mingwX64Test",
-    "tvosArm64Binaries",
-    "tvosArm64TestBinaries",
-    "tvosSimulatorArm64Binaries",
-    "tvosSimulatorArm64TestBinaries",
-    "watchosArm32Binaries",
-    "watchosArm32TestBinaries",
-    "watchosArm64Binaries",
-    "watchosArm64TestBinaries",
-    "watchosDeviceArm64Binaries",
-    "watchosDeviceArm64TestBinaries",
-    "watchosSimulatorArm64Binaries",
-    "watchosSimulatorArm64TestBinaries",
-    "embedSwiftExportForXcode",
-    "assembleTokioXCFramework",
-    "assembleTokioDebugXCFramework",
-    "assembleTokioReleaseXCFramework",
-    "assembleDebugIosFatFrameworkForTokioXCFramework",
-    "assembleReleaseIosFatFrameworkForTokioXCFramework",
-    "assembleDebugIosSimulatorFatFrameworkForTokioXCFramework",
-    "assembleReleaseIosSimulatorFatFrameworkForTokioXCFramework",
-    "assembleDebugMacosFatFrameworkForTokioXCFramework",
-    "assembleReleaseMacosFatFrameworkForTokioXCFramework",
-    "assembleDebugTvosFatFrameworkForTokioXCFramework",
-    "assembleReleaseTvosFatFrameworkForTokioXCFramework",
-    "assembleDebugTvosSimulatorFatFrameworkForTokioXCFramework",
-    "assembleReleaseTvosSimulatorFatFrameworkForTokioXCFramework",
-    "assembleDebugWatchosFatFrameworkForTokioXCFramework",
-    "assembleReleaseWatchosFatFrameworkForTokioXCFramework",
-    "assembleDebugWatchosSimulatorFatFrameworkForTokioXCFramework",
-    "assembleReleaseWatchosSimulatorFatFrameworkForTokioXCFramework",
-    "exportCommonSourceSetsMetadataLocationsForMetadataApiElements",
-    "exportRootPublicationCoordinatesForMetadataApiElements",
-    "exportCrossCompilationMetadataForAndroidNativeArm32ApiElements",
-    "exportCrossCompilationMetadataForAndroidNativeArm64ApiElements",
-    "exportCrossCompilationMetadataForAndroidNativeX64ApiElements",
-    "exportCrossCompilationMetadataForAndroidNativeX86ApiElements",
-    "exportCrossCompilationMetadataForIosArm64ApiElements",
-    "exportCrossCompilationMetadataForIosSimulatorArm64ApiElements",
-    "exportCrossCompilationMetadataForIosX64ApiElements",
-    "exportCrossCompilationMetadataForLinuxArm64ApiElements",
-    "exportCrossCompilationMetadataForLinuxX64ApiElements",
-    "exportCrossCompilationMetadataForMacosArm64ApiElements",
-    "exportCrossCompilationMetadataForMingwX64ApiElements",
-    "exportCrossCompilationMetadataForTvosArm64ApiElements",
-    "exportCrossCompilationMetadataForTvosSimulatorArm64ApiElements",
-    "exportCrossCompilationMetadataForWatchosArm32ApiElements",
-    "exportCrossCompilationMetadataForWatchosArm64ApiElements",
-    "exportCrossCompilationMetadataForWatchosDeviceArm64ApiElements",
-    "exportCrossCompilationMetadataForWatchosSimulatorArm64ApiElements",
-    "exportTargetPublicationCoordinatesForAndroidApiElements",
-    "exportTargetPublicationCoordinatesForAndroidNativeArm32ApiElements",
-    "exportTargetPublicationCoordinatesForAndroidNativeArm64ApiElements",
-    "exportTargetPublicationCoordinatesForAndroidNativeX64ApiElements",
-    "exportTargetPublicationCoordinatesForAndroidNativeX86ApiElements",
-    "exportTargetPublicationCoordinatesForAndroidRuntimeElements",
-    "exportTargetPublicationCoordinatesForIosArm64ApiElements",
-    "exportTargetPublicationCoordinatesForIosSimulatorArm64ApiElements",
-    "exportTargetPublicationCoordinatesForIosX64ApiElements",
-    "exportTargetPublicationCoordinatesForJsApiElements",
-    "exportTargetPublicationCoordinatesForJsRuntimeElements",
-    "exportTargetPublicationCoordinatesForJvmApiElements",
-    "exportTargetPublicationCoordinatesForJvmRuntimeElements",
-    "exportTargetPublicationCoordinatesForLinuxArm64ApiElements",
-    "exportTargetPublicationCoordinatesForLinuxX64ApiElements",
-    "exportTargetPublicationCoordinatesForMacosArm64ApiElements",
-    "exportTargetPublicationCoordinatesForMingwX64ApiElements",
-    "exportTargetPublicationCoordinatesForTvosArm64ApiElements",
-    "exportTargetPublicationCoordinatesForTvosSimulatorArm64ApiElements",
-    "exportTargetPublicationCoordinatesForWasmJsApiElements",
-    "exportTargetPublicationCoordinatesForWasmJsRuntimeElements",
-    "exportTargetPublicationCoordinatesForWasmWasiApiElements",
-    "exportTargetPublicationCoordinatesForWasmWasiRuntimeElements",
-    "exportTargetPublicationCoordinatesForWatchosArm32ApiElements",
-    "exportTargetPublicationCoordinatesForWatchosArm64ApiElements",
-    "exportTargetPublicationCoordinatesForWatchosDeviceArm64ApiElements",
-    "exportTargetPublicationCoordinatesForWatchosSimulatorArm64ApiElements",
-)
 
 tasks.named("build") {
-    dependsOn(fullTargetBuildTasks)
-}
-
-afterEvaluate {
-    tasks.named("build") {
-        dependsOn(
-            tasks.matching {
-                name.endsWith("MainClasses") ||
-                    name.endsWith("TestClasses") ||
-                    name.endsWith("Binaries") ||
-                    name.endsWith("XCFramework") ||
-                    name == "embedSwiftExportForXcode" ||
-                    name.startsWith("exportCommonSourceSetsMetadataLocationsFor") ||
-                    name.startsWith("exportRootPublicationCoordinatesFor") ||
-                    name.startsWith("exportCrossCompilationMetadataFor") ||
-                    name.startsWith("exportTargetPublicationCoordinatesFor")
-            },
-        )
-    }
+    dependsOn(fullTargetBuildTaskNames)
 }
