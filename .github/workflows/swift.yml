@@ -69,10 +69,11 @@ jobs:
       #     configured value`.
       #
       # Output lands in `build/swift-test/`:
-      #   * `libTokio.a` — the merged static archive containing
-      #     every `@ExportedBridge`-annotated function emitted by
-      #     `build/SwiftExport/macosArm64/Debug/**/*.kt`.
-      #   * Four `.swiftmodule/` directories: Tokio,
+      #   * `lib<Module>.a` — the merged static archive containing every
+      #     `@ExportedBridge`-annotated function emitted by
+      #     `build/SwiftExport/macosArm64/Debug/**/*.kt`. `<Module>` is the
+      #     repo's `project.frameworkName` (the Swift Export module name).
+      #   * Four `.swiftmodule/` directories: <Module>,
       #     KotlinRuntimeSupport, ExportedKotlinPackages, KotlinRuntime.
       - name: Build Swift Export package
         env:
@@ -86,6 +87,25 @@ jobs:
           DEPLOYMENT_TARGET_SETTING_NAME: MACOSX_DEPLOYMENT_TARGET
         run: ./gradlew embedSwiftExportForXcode --no-configuration-cache
 
+      - name: Set Swift package macOS platform
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          package = Path("build/SPMPackage/macosArm64/Debug/Package.swift")
+          text = package.read_text()
+          if "platforms:" not in text:
+              package.write_text(
+                  re.sub(
+                      r'(name:\s*"[^"]*",)',
+                      r'\1\n    platforms: [.macOS(.v14)],',
+                      text,
+                      count=1,
+                  )
+              )
+          PY
+
       - name: Run swift test against Kotlin-exported module
         working-directory: swift-test-harness
         run: swift test
@@ -96,7 +116,7 @@ jobs:
         with:
           name: swift-export-artifacts
           path: |
-            build/swift-test/libTokio.a
+            build/swift-test/lib*.a
             build/swift-test/*.swiftmodule/
             build/SPMPackage/macosArm64/Debug/
           retention-days: 7
