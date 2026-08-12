@@ -1,4 +1,3 @@
-// port-lint: ignore
 // Kotlin task poll model used by async_read.rs and async_write.rs translations.
 package io.github.kotlinmania.tokio.io
 
@@ -9,7 +8,9 @@ public sealed interface Poll<out T> {
     /**
      * The operation has completed and produced a value.
      */
-    public data class Ready<T>(public val value: T) : Poll<T>
+    public data class Ready<T>(
+        public val value: T,
+    ) : Poll<T>
 
     /**
      * The operation cannot complete yet; the current task should be woken when
