@@ -33,7 +33,8 @@ import io.github.kotlinmania.tokio.io.split
 public class DuplexStream internal constructor(
     private val read: SimplexStream,
     private val write: SimplexStream,
-) : AsyncRead, AsyncWrite {
+) : AsyncRead,
+    AsyncWrite {
     override fun pollRead(cx: Context, buf: ReadBuf): Poll<Result<Unit>> =
         read.pollRead(cx, buf)
 
@@ -78,7 +79,8 @@ public class SimplexStream private constructor(
     private val maxBufSize: Int,
     private var readWaker: (() -> Unit)?,
     private var writeWaker: (() -> Unit)?,
-) : AsyncRead, AsyncWrite {
+) : AsyncRead,
+    AsyncWrite {
     /**
      * Creates an unidirectional buffer that acts like an in-memory pipe. To
      * create a split version with separate reader and writer, use `simplex`.

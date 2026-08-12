@@ -7,23 +7,24 @@ import kotlin.test.assertEquals
 class MemchrTest {
     @Test
     fun memchrTest() {
-        val haystack = ubyteArrayOf(
-            '1'.code.toUByte(),
-            '2'.code.toUByte(),
-            '3'.code.toUByte(),
-            'a'.code.toUByte(),
-            'b'.code.toUByte(),
-            'c'.code.toUByte(),
-            '4'.code.toUByte(),
-            '5'.code.toUByte(),
-            '6'.code.toUByte(),
-            0u,
-            0xffu,
-            'a'.code.toUByte(),
-            'b'.code.toUByte(),
-            'c'.code.toUByte(),
-            '\n'.code.toUByte(),
-        )
+        val haystack =
+            ubyteArrayOf(
+                '1'.code.toUByte(),
+                '2'.code.toUByte(),
+                '3'.code.toUByte(),
+                'a'.code.toUByte(),
+                'b'.code.toUByte(),
+                'c'.code.toUByte(),
+                '4'.code.toUByte(),
+                '5'.code.toUByte(),
+                '6'.code.toUByte(),
+                0u,
+                0xffu,
+                'a'.code.toUByte(),
+                'b'.code.toUByte(),
+                'c'.code.toUByte(),
+                '\n'.code.toUByte(),
+            )
 
         assertEquals(0, memchr('1'.code.toUByte(), haystack))
         assertEquals(1, memchr('2'.code.toUByte(), haystack))

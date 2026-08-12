@@ -49,9 +49,10 @@ class MemTest {
         val stream = SimplexStream.newUnsplit(5)
         val cx = Context()
 
-        val written = assertIs<Poll.Ready<Result<Int>>>(
-            stream.pollWriteVectored(cx, listOf(IoSlice(bytes("abc")), IoSlice(bytes("def")))),
-        )
+        val written =
+            assertIs<Poll.Ready<Result<Int>>>(
+                stream.pollWriteVectored(cx, listOf(IoSlice(bytes("abc")), IoSlice(bytes("def")))),
+            )
         assertEquals(5, written.value.getOrThrow())
 
         val out = ReadBuf(UByteArray(5))
