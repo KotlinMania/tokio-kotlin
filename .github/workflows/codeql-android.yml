@@ -36,7 +36,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.3.0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.7
+        uses: github/codeql-action/init@v4.37.8
         with:
           languages: java-kotlin
           build-mode: manual
@@ -52,6 +52,6 @@ jobs:
           ./gradlew --no-daemon --project-dir codeql-build codeqlCompileAndroid -Pkotlinmania.codeql=true --no-configuration-cache
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4.37.7
+        uses: github/codeql-action/analyze@v4.37.8
         with:
           category: "/language:java-kotlin-android"
