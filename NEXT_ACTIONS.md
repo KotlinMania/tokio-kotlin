@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 13/372 (3.5%)
-- **Function parity:** 110/3335 matched (target 186) — 3.3%
-- **Class/type parity:** 14/662 matched (target 26) — 2.1%
-- **Combined symbol parity:** 124/3997 matched (target 212) — 3.1%
-- **Average inline-code cosine:** 0.58 (function body across 13 matched files)
-- **Average documentation cosine:** 0.68 (doc text across 13 matched files)
+- **Files Present:** 21/372 (5.6%)
+- **Function parity:** 134/3333 matched (target 233) — 4.0%
+- **Class/type parity:** 20/662 matched (target 35) — 3.0%
+- **Combined symbol parity:** 154/3995 matched (target 268) — 3.9%
+- **Average inline-code cosine:** 0.52 (function body across 21 matched files)
+- **Average documentation cosine:** 0.61 (doc text across 21 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 8 files with <0.60 function similarity
+- **Critical Issues:** 15 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -65,6 +65,16 @@ Based on AST analysis, here are the concrete next steps.
 - **Missing types:** _none_
 - **Action:** Review and complete missing sections
 
+### 6. metrics.scheduler
+- **Similarity:** 0.82 (needs 3% improvement)
+- **Dependencies:** 11
+- **Priority Score:** 11000402.0
+- **Functions:** 3/3 matched
+- **Missing functions:** _none_
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+- **Action:** Minor refinements needed
+
 ## Priority 2: Port Missing High-Value Files
 
 Critical missing files (>10 dependencies):
@@ -81,15 +91,11 @@ Critical missing files (>10 dependencies):
    - Path: `sync/mutex.rs`
    - Essential for 14 other files
 
-4. **metrics.scheduler** (11 deps)
-   - Path: `runtime/metrics/scheduler.rs`
-   - Essential for 11 other files
-
-5. **runtime.handle** (11 deps)
+4. **runtime.handle** (11 deps)
    - Path: `runtime/handle.rs`
    - Essential for 11 other files
 
-6. **sync.notify** (10 deps)
+5. **sync.notify** (10 deps)
    - Path: `sync/notify.rs`
    - Essential for 10 other files
 
@@ -164,7 +170,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 0/0 matched
 - **Missing types:** _none_
 
-### 7. io.ready
+### 7. metrics.scheduler
+
+- **Target:** `metrics.Scheduler`
+- **Similarity:** 0.82
+- **Dependents:** 11
+- **Priority Score:** 11000402.0
+- **Functions:** 3/3 matched
+- **Missing functions:** _none_
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 8. io.ready
 
 - **Target:** `io.Ready`
 - **Similarity:** 0.77
@@ -175,7 +192,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/2 matched
 - **Missing types:** `Output`
 
-### 8. io.interest
+### 9. io.interest
 
 - **Target:** `io.Interest`
 - **Similarity:** 0.50
@@ -186,7 +203,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/2 matched
 - **Missing types:** `Output`
 
-### 9. io.async_read
+### 10. io.async_read
 
 - **Target:** `io.AsyncRead`
 - **Similarity:** 0.40
@@ -197,7 +214,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 10. io.read_buf
+### 11. io.read_buf
 
 - **Target:** `io.ReadBuf`
 - **Similarity:** 0.53
@@ -208,7 +225,29 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 2)
 - **Missing types:** _none_
 
-### 11. util.memchr
+### 12. util.sync_wrapper
+
+- **Target:** `util.SyncWrapper`
+- **Similarity:** 0.32
+- **Dependents:** 1
+- **Priority Score:** 1020406.8
+- **Functions:** 1/3 matched (target 4)
+- **Missing functions:** `new`, `downcast_ref_sync`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 13. util.bit
+
+- **Target:** `util.Bit`
+- **Similarity:** 0.58
+- **Dependents:** 1
+- **Priority Score:** 1010904.2
+- **Functions:** 7/8 matched (target 11)
+- **Missing functions:** `fmt`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 14. util.memchr
 
 - **Target:** `util.Memchr`
 - **Similarity:** 0.38
@@ -220,7 +259,65 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
 
-### 12. io.split
+### 15. util.empty
+
+- **Target:** `util.Empty`
+- **Similarity:** 0.38
+- **Dependents:** 0
+- **Priority Score:** 61206.2
+- **Functions:** 6/12 matched (target 8)
+- **Missing functions:** `poll_fill_buf`, `consume`, `start_seek`, `poll_complete`, `fmt`, `assert_unpin`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 16. util.cacheline
+
+- **Target:** `util.Cacheline`
+- **Similarity:** 0.00
+- **Dependents:** 0
+- **Priority Score:** 40510.0
+- **Functions:** 0/3 matched
+- **Missing functions:** `new`, `deref`, `deref_mut`
+- **Types:** 1/2 matched (target 1)
+- **Missing types:** `Target`
+
+### 17. util.rand
+
+- **Target:** `util.Rand`
+- **Similarity:** 0.35
+- **Dependents:** 0
+- **Priority Score:** 30806.5
+- **Functions:** 3/6 matched (target 7)
+- **Missing functions:** `new`, `from_pair`, `from_seed`
+- **Types:** 2/2 matched
+- **Missing types:** _none_
+
+### 18. util.sink
+
+- **Target:** `util.Sink`
+- **Similarity:** 0.47
+- **Dependents:** 0
+- **Priority Score:** 20505.3
+- **Functions:** 3/5 matched (target 7)
+- **Missing functions:** `fmt`, `assert_unpin`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 19. util.repeat
+
+- **Target:** `util.Repeat`
+- **Similarity:** 0.32
+- **Dependents:** 0
+- **Priority Score:** 10206.8
+- **Functions:** 1/2 matched (target 4)
+- **Missing functions:** `assert_unpin`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 20. io.split
 
 - **Target:** `io.Split`
 - **Similarity:** 0.72
@@ -231,7 +328,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 13. util.metric_atomics
+### 21. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
@@ -251,16 +348,6 @@ For each file to be considered "complete":
 - Documentation ported
 - port-lint header present
 
-## Next Commands
-
-```bash
-# Initialize task queue for systematic porting
-cd tools/ast_distance
-./ast_distance --init-tasks ../../tmp/tokio/src rust ../../src/commonMain/kotlin/io/github/kotlinmania/tokio kotlin tasks.json ../../AGENTS.md
-
-# Get next high-priority task
-./ast_distance --assign tasks.json <agent-id>
-```
 ## Reexport / Wiring Modules
 
 These files match `reexport_modules` patterns in `.ast_distance_config.json`. They are filtered out of
