@@ -5,6 +5,6 @@ import Tokio
 struct TokioExportTests {
     @Test("Tokio Swift module imports cleanly")
     func swiftModuleLoads() {
-        #expect(true)
+        #expect(Bool(true))
     }
 }
