@@ -8,7 +8,7 @@ androidKmp = "9.4.0"
 vanniktech = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
-kotlinxBenchmark = "0.4.17"
+kotlinxBenchmark = "0.4.19"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
