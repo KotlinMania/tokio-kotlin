@@ -598,6 +598,13 @@ if (benchmarkEnabled) {
         }
 }
 
+// ./gradlew test — single entry point that runs ALL tests:
+// detekt, ktlintCheck, allTests (jvm, macosArm64, ios/tvos/watchos simulators,
+// js, wasmJs, wasmWasi), testAndroidHostTest, and swiftExportSmokeTest.
+tasks.register("test") {
+    dependsOn("check")
+}
+
 tasks.named("check") {
     dependsOn(tasks.withType<io.gitlab.arturbosch.detekt.Detekt>())
     dependsOn(tasks.named("ktlintCheck"))
