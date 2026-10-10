@@ -867,6 +867,16 @@ tasks.register("setupAndroidSdk") {
     dependsOn("ensureAndroidSdk")
 }
 
+// Exact test lifecycle task. Without this, ./gradlew test is ambiguous between
+// Android test task names. This runs commonTest through the KMP allTests
+// lifecycle and adds the Android host + Swift Export parity tests.
+tasks.register("test") {
+    group = "verification"
+    description = "Runs the commonTest-backed KMP suite, Android host tests, and Swift Export smoke test."
+    dependsOn("hostTests")
+    dependsOn("swiftExportSmokeTest")
+}
+
 // Explicit test runner. Named hostTests to avoid shadowing the KMP allTests
 // lifecycle task. Do not use findByName/mapNotNull here: missing test tasks
 // mean the target surface drifted and must fail loudly.
@@ -876,7 +886,9 @@ tasks.register("hostTests") {
     dependsOn(
         "jvmTest",
         "macosArm64Test",
+        "kotlinUpgradeYarnLock",
         "jsNodeTest",
+        "kotlinWasmUpgradeYarnLock",
         "wasmJsNodeTest",
         "wasmWasiNodeTest",
         "testAndroidHostTest",
@@ -895,12 +907,16 @@ tasks.register("swiftExportSmokeTest") {
 
     doLast {
         val execOperations = serviceOf<ExecOperations>()
-        val swiftBuildDir =
+        val swiftBuildFile =
             layout.buildDirectory
                 .dir("swift-test")
                 .get()
                 .asFile
-                .absolutePath
+        if (swiftBuildFile.exists()) {
+            swiftBuildFile.deleteRecursively()
+        }
+        swiftBuildFile.mkdirs()
+        val swiftBuildDir = swiftBuildFile.absolutePath
         execOperations
             .exec {
                 workingDir = projectDir
