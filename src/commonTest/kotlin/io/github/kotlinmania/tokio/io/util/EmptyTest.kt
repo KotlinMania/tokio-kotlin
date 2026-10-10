@@ -29,9 +29,10 @@ class EmptyTest {
         val writeResult = assertIs<Poll.Ready<Result<Int>>>(writer.pollWrite(cx, data))
         assertEquals(8, writeResult.value.getOrThrow())
 
-        val vectoredResult = assertIs<Poll.Ready<Result<Int>>>(
-            writer.pollWriteVectored(cx, listOf(IoSlice(UByteArray(3)), IoSlice(UByteArray(5))))
-        )
+        val vectoredResult =
+            assertIs<Poll.Ready<Result<Int>>>(
+                writer.pollWriteVectored(cx, listOf(IoSlice(UByteArray(3)), IoSlice(UByteArray(5)))),
+            )
         assertEquals(8, vectoredResult.value.getOrThrow())
 
         val flushResult = assertIs<Poll.Ready<Result<Unit>>>(writer.pollFlush(cx))

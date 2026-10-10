@@ -17,9 +17,10 @@ class SinkTest {
         val writeResult = assertIs<Poll.Ready<Result<Int>>>(writer.pollWrite(cx, data))
         assertEquals(12, writeResult.value.getOrThrow())
 
-        val vectoredResult = assertIs<Poll.Ready<Result<Int>>>(
-            writer.pollWriteVectored(cx, listOf(IoSlice(UByteArray(4)), IoSlice(UByteArray(6))))
-        )
+        val vectoredResult =
+            assertIs<Poll.Ready<Result<Int>>>(
+                writer.pollWriteVectored(cx, listOf(IoSlice(UByteArray(4)), IoSlice(UByteArray(6)))),
+            )
         assertEquals(10, vectoredResult.value.getOrThrow())
 
         val flushResult = assertIs<Poll.Ready<Result<Unit>>>(writer.pollFlush(cx))

@@ -14,28 +14,30 @@ import io.github.kotlinmania.tokio.io.ReadBuf
  *
  * This class is generally created by calling [empty].
  */
-public class Empty internal constructor() : AsyncRead, AsyncWrite {
-    override fun pollRead(cx: Context, buf: ReadBuf): Poll<Result<Unit>> =
-        Poll.ready(Result.success(Unit))
+public class Empty internal constructor() :
+    AsyncRead,
+    AsyncWrite {
+        override fun pollRead(cx: Context, buf: ReadBuf): Poll<Result<Unit>> =
+            Poll.ready(Result.success(Unit))
 
-    override fun pollWrite(cx: Context, buf: UByteArray): Poll<Result<Int>> =
-        Poll.ready(Result.success(buf.size))
+        override fun pollWrite(cx: Context, buf: UByteArray): Poll<Result<Int>> =
+            Poll.ready(Result.success(buf.size))
 
-    override fun pollFlush(cx: Context): Poll<Result<Unit>> =
-        Poll.ready(Result.success(Unit))
+        override fun pollFlush(cx: Context): Poll<Result<Unit>> =
+            Poll.ready(Result.success(Unit))
 
-    override fun pollShutdown(cx: Context): Poll<Result<Unit>> =
-        Poll.ready(Result.success(Unit))
+        override fun pollShutdown(cx: Context): Poll<Result<Unit>> =
+            Poll.ready(Result.success(Unit))
 
-    override fun isWriteVectored(): Boolean = true
+        override fun isWriteVectored(): Boolean = true
 
-    override fun pollWriteVectored(cx: Context, bufs: List<IoSlice>): Poll<Result<Int>> {
-        val total = bufs.sumOf { it.size }
-        return Poll.ready(Result.success(total))
+        override fun pollWriteVectored(cx: Context, bufs: List<IoSlice>): Poll<Result<Int>> {
+            val total = bufs.sumOf { it.size }
+            return Poll.ready(Result.success(total))
+        }
+
+        override fun toString(): String = "Empty"
     }
-
-    override fun toString(): String = "Empty"
-}
 
 /**
  * Creates a value that is always at EOF for reads, and ignores all data written.
