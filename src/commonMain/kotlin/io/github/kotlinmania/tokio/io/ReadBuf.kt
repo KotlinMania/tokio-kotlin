@@ -249,13 +249,6 @@ public class ReadBuf private constructor(
     }
 }
 
-private fun sliceToUninitMut(slice: UByteArray): UByteSlice =
-    UByteSlice(slice, 0, slice.size)
-
-private fun sliceAssumeInit(slice: UByteSlice): UByteArray = slice.copy()
-
-private fun sliceAssumeInitMut(slice: UByteSlice): UByteSlice = slice
-
 /**
  * Mutable view over a contiguous region of a byte buffer.
  */

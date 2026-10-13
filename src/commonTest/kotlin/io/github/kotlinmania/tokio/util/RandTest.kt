@@ -19,7 +19,7 @@ class RandTest {
     @Test
     fun testFastrandN() {
         val rng = FastRand(RngSeed(111u, 222u))
-        for (i in 0 until 50) {
+        repeat(50) {
             val v = rng.fastrandN(10u)
             assertTrue(v < 10u)
         }
