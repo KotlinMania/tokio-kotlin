@@ -130,7 +130,10 @@ public class CursorAsyncWrite(
         for (buf in bufs) {
             val result = pollWrite(cx, buf.asSlice())
             when (result) {
-                Poll.Pending -> return result
+                is Poll.Pending -> {
+                    return result
+                }
+
                 is Poll.Ready -> {
                     val amount = result.value.getOrElse { return Poll.ready(Result.failure(it)) }
                     written += amount

@@ -4,19 +4,23 @@ package io.github.kotlinmania.tokio.io
 /**
  * Result of polling an asynchronous operation.
  */
-public sealed interface Poll<out T> {
+public open class Poll<out T> protected constructor(
+    public val isReady: Boolean,
+) {
+    public val isPending: Boolean get() = !isReady
+
     /**
      * The operation has completed and produced a value.
      */
     public data class Ready<T>(
         public val value: T,
-    ) : Poll<T>
+    ) : Poll<T>(true)
 
     /**
      * The operation cannot complete yet; the current task should be woken when
      * progress may be possible.
      */
-    public data object Pending : Poll<Nothing>
+    public data object Pending : Poll<Nothing>(false)
 
     public companion object {
         public fun <T> ready(value: T): Poll<T> = Ready(value)

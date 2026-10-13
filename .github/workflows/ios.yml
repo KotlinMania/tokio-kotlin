@@ -40,7 +40,6 @@ jobs:
           ./gradlew \
             compileKotlinIosArm64 \
             compileKotlinIosSimulatorArm64 \
-            compileKotlinIosX64 \
             iosSimulatorArm64Test \
             "assemble${XCF_NAME}XCFramework" \
             --no-configuration-cache
