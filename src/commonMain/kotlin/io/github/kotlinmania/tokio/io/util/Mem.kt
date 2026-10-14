@@ -1,6 +1,7 @@
 // port-lint: source io/util/mem.rs
 package io.github.kotlinmania.tokio.io.util
 
+import io.github.kotlinmania.bytes.BytesMut
 import io.github.kotlinmania.tokio.io.AsyncRead
 import io.github.kotlinmania.tokio.io.AsyncWrite
 import io.github.kotlinmania.tokio.io.Context
@@ -10,6 +11,8 @@ import io.github.kotlinmania.tokio.io.ReadBuf
 import io.github.kotlinmania.tokio.io.ReadHalf
 import io.github.kotlinmania.tokio.io.WriteHalf
 import io.github.kotlinmania.tokio.io.split
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 
 /**
  * In-process memory I/O types.
@@ -24,6 +27,8 @@ import io.github.kotlinmania.tokio.io.split
  *
  * Closing a `DuplexStream`
  *
+ * Close an endpoint explicitly with `close`, or scope its lifetime with `use`.
+ *
  * If one end of the `DuplexStream` channel is closed, any pending reads on the
  * other side will continue to read data until the buffer is drained, then they
  * will signal end-of-file by returning zero bytes. Any writes to the other
@@ -33,28 +38,32 @@ import io.github.kotlinmania.tokio.io.split
 public class DuplexStream internal constructor(
     private val read: SimplexStream,
     private val write: SimplexStream,
+    private val readLock: SynchronizedObject,
+    private val writeLock: SynchronizedObject,
 ) : AsyncRead,
-    AsyncWrite {
+    AsyncWrite,
+    AutoCloseable {
     override fun pollRead(cx: Context, buf: ReadBuf): Poll<Result<Unit>> =
-        read.pollRead(cx, buf)
+        synchronized(readLock) { read.pollRead(cx, buf) }
 
     override fun pollWrite(cx: Context, buf: UByteArray): Poll<Result<Int>> =
-        write.pollWrite(cx, buf)
+        synchronized(writeLock) { write.pollWrite(cx, buf) }
 
     override fun pollWriteVectored(cx: Context, bufs: List<IoSlice>): Poll<Result<Int>> =
-        write.pollWriteVectored(cx, bufs)
+        synchronized(writeLock) { write.pollWriteVectored(cx, bufs) }
 
     override fun isWriteVectored(): Boolean = true
 
     override fun pollFlush(cx: Context): Poll<Result<Unit>> =
-        write.pollFlush(cx)
+        synchronized(writeLock) { write.pollFlush(cx) }
 
     override fun pollShutdown(cx: Context): Poll<Result<Unit>> =
-        write.pollShutdown(cx)
+        synchronized(writeLock) { write.pollShutdown(cx) }
 
-    public fun close() {
-        write.closeWrite()
-        read.closeRead()
+    override fun close() {
+        // Notify the other side of the closure.
+        synchronized(writeLock) { write.closeWrite() }
+        synchronized(readLock) { read.closeRead() }
     }
 
     public fun drop() {
@@ -74,7 +83,7 @@ public class DuplexStream internal constructor(
  * creates a handle for both reading and writing.
  */
 public class SimplexStream private constructor(
-    private val buffer: MutableList<UByte>,
+    private val buffer: BytesMut,
     private var isClosed: Boolean,
     private val maxBufSize: Int,
     private var readWaker: (() -> Unit)?,
@@ -91,7 +100,7 @@ public class SimplexStream private constructor(
     public companion object {
         public fun newUnsplit(maxBufSize: Int): SimplexStream =
             SimplexStream(
-                buffer = mutableListOf(),
+                buffer = BytesMut.new(),
                 isClosed = false,
                 maxBufSize = maxBufSize,
                 readWaker = null,
@@ -101,6 +110,7 @@ public class SimplexStream private constructor(
 
     internal fun closeWrite() {
         isClosed = true
+        // Notify readers that no more data will come.
         val waker = readWaker
         readWaker = null
         waker?.invoke()
@@ -108,17 +118,19 @@ public class SimplexStream private constructor(
 
     internal fun closeRead() {
         isClosed = true
+        // Notify writers that they have to abort.
         val waker = writeWaker
         writeWaker = null
         waker?.invoke()
     }
 
     internal fun pollReadInternal(cx: Context, buf: ReadBuf): Poll<Result<Unit>> {
-        if (buffer.isNotEmpty()) {
-            val max = minOf(buffer.size, buf.remaining())
-            val bytes = UByteArray(max) { buffer.removeAt(0) }
-            buf.putSlice(bytes)
+        if (!buffer.isEmpty()) {
+            val max = minOf(buffer.len(), buf.remaining())
+            buf.putSlice(buffer.chunk().copyOfRange(0, max))
+            buffer.advance(max)
             if (max > 0) {
+                // The destination might be empty; do not wake if no bytes moved.
                 val waker = writeWaker
                 writeWaker = null
                 waker?.invoke()
@@ -139,16 +151,14 @@ public class SimplexStream private constructor(
             return Poll.ready(Result.failure(BrokenPipeException()))
         }
 
-        val avail = maxBufSize - buffer.size
+        val avail = maxBufSize - buffer.len()
         if (avail == 0) {
             writeWaker = cx.waker()
             return Poll.pending()
         }
 
         val len = minOf(buf.size, avail)
-        for (index in 0..<len) {
-            buffer.add(buf[index])
-        }
+        buffer.extendFromSlice(buf.asByteArray().copyOfRange(0, len))
 
         val waker = readWaker
         readWaker = null
@@ -165,7 +175,7 @@ public class SimplexStream private constructor(
             return Poll.ready(Result.failure(BrokenPipeException()))
         }
 
-        val avail = maxBufSize - buffer.size
+        val avail = maxBufSize - buffer.len()
         if (avail == 0) {
             writeWaker = cx.waker()
             return Poll.pending()
@@ -179,9 +189,7 @@ public class SimplexStream private constructor(
 
             val slice = buf.asSlice()
             val len = minOf(slice.size, rem)
-            for (index in 0..<len) {
-                buffer.add(slice[index])
-            }
+            buffer.extendFromSlice(slice.asByteArray().copyOfRange(0, len))
             rem -= len
         }
 
@@ -214,7 +222,7 @@ public class SimplexStream private constructor(
     public fun fmt(): String = toString()
 
     override fun toString(): String =
-        "SimplexStream(buffered=${buffer.size}, closed=$isClosed, maxBufSize=$maxBufSize)"
+        "SimplexStream(buffered=${buffer.len()}, closed=$isClosed, maxBufSize=$maxBufSize)"
 }
 
 /**
@@ -227,10 +235,12 @@ public class SimplexStream private constructor(
 public fun duplex(maxBufSize: Int): Pair<DuplexStream, DuplexStream> {
     val one = SimplexStream.newUnsplit(maxBufSize)
     val two = SimplexStream.newUnsplit(maxBufSize)
+    val oneLock = SynchronizedObject()
+    val twoLock = SynchronizedObject()
 
     return Pair(
-        DuplexStream(read = one, write = two),
-        DuplexStream(read = two, write = one),
+        DuplexStream(read = one, write = two, readLock = oneLock, writeLock = twoLock),
+        DuplexStream(read = two, write = one, readLock = twoLock, writeLock = oneLock),
     )
 }
 

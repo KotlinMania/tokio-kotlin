@@ -1,6 +1,9 @@
 // port-lint: source io/split.rs
 package io.github.kotlinmania.tokio.io
 
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
+
 /**
  * Split a single value implementing `AsyncRead` and `AsyncWrite` into separate
  * `AsyncRead` and `AsyncWrite` handles.
@@ -94,16 +97,35 @@ internal class Inner<T>(
     stream: T,
     val isWriteVectored: Boolean,
 ) where T : AsyncRead, T : AsyncWrite {
+    private val lock = SynchronizedObject()
     private var stream: T? = stream
+    private var poisoned = false
+    private var polling = false
 
-    fun <R> withLock(f: (T) -> R): R {
-        val current = checkNotNull(stream) { "split stream has already been unsplit" }
-        return f(current)
-    }
+    fun <R> withLock(f: (T) -> R): R =
+        synchronized(lock) {
+            check(!poisoned) { "split stream mutex is poisoned" }
+            check(!polling) { "split stream is already being polled" }
+            val current = checkNotNull(stream) { "split stream has already been unsplit" }
+            polling = true
+            var completed = false
+            try {
+                // The stream remains in place while the lock is held.
+                f(current).also { completed = true }
+            } finally {
+                polling = false
+                if (!completed) {
+                    poisoned = true
+                }
+            }
+        }
 
-    fun take(): T {
-        val current = checkNotNull(stream) { "split stream has already been unsplit" }
-        stream = null
-        return current
-    }
+    fun take(): T =
+        synchronized(lock) {
+            check(!poisoned) { "split stream mutex is poisoned" }
+            check(!polling) { "split stream is already being polled" }
+            val current = checkNotNull(stream) { "split stream has already been unsplit" }
+            stream = null
+            current
+        }
 }

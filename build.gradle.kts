@@ -489,6 +489,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(libs.bytes.kotlin)
             implementation(commonMainDependencyBundle)
         }
         commonTest.dependencies {

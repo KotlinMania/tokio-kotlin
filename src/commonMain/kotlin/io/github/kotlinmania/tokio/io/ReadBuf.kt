@@ -1,6 +1,8 @@
 // port-lint: source io/read_buf.rs
 package io.github.kotlinmania.tokio.io
 
+import io.github.kotlinmania.bytes.buf.BufMut
+import io.github.kotlinmania.bytes.buf.UninitSlice
 import kotlin.math.min
 
 /**
@@ -30,7 +32,7 @@ public class ReadBuf private constructor(
     private val end: Int,
     private var filled: Int,
     private var initialized: Int,
-) {
+) : BufMut {
     init {
         require(start in 0..end) { "start must be within the buffer" }
         require(end <= buffer.size) { "end must be within the buffer" }
@@ -68,6 +70,7 @@ public class ReadBuf private constructor(
      * Returns a new `ReadBuf` comprised of the unfilled section up to `n`.
      */
     public fun take(n: Int): ReadBuf {
+        require(n >= 0) { "n must be non-negative" }
         val max = min(remaining(), n)
         return uninit(buffer, start + filled, start + filled + max)
     }
@@ -90,9 +93,13 @@ public class ReadBuf private constructor(
      * Returns a mutable view of the entire buffer without ensuring that it has
      * been fully initialized.
      *
+     * Bytes before `filled().size` are filled, and bytes before
+     * `initialized().size` are initialized.
+     *
      * The caller must uphold the filled and initialized cursor invariants. If
      * the caller initializes part of the uninitialized section, it must call
-     * `assumeInit` with the number of bytes initialized.
+     * `assumeInit` with the number of bytes initialized. The caller must not
+     * de-initialize bytes, including bytes marked as uninitialized by `ReadBuf`.
      */
     public fun innerMut(): UByteSlice = UByteSlice(buffer, start, capacity())
 
@@ -101,7 +108,7 @@ public class ReadBuf private constructor(
      * ensuring that it has been fully initialized.
      *
      * The caller must not de-initialize portions of the buffer that have already
-     * been initialized.
+     * been initialized, including bytes marked as uninitialized by `ReadBuf`.
      */
     public fun unfilledMut(): UByteSlice =
         UByteSlice(buffer, start + filled, remaining())
@@ -118,10 +125,13 @@ public class ReadBuf private constructor(
     /**
      * Returns a mutable view of the first `n` bytes of the unfilled part of the
      * buffer, ensuring it is fully initialized.
+     *
+     * @throws IllegalArgumentException if `n` is negative or exceeds [remaining].
      */
     public fun initializeUnfilledTo(n: Int): UByteSlice {
-        require(remaining() >= n) { "n overflows remaining" }
+        require(n in 0..remaining()) { "n overflows remaining" }
 
+        // This cannot overflow after checking the remaining capacity.
         val endOfInitialized = filled + n
         if (initialized < endOfInitialized) {
             buffer.fill(0u, start + initialized, start + endOfInitialized)
@@ -151,8 +161,12 @@ public class ReadBuf private constructor(
      * Advances the size of the filled region of the buffer.
      *
      * The number of initialized bytes is not changed.
+     *
+     * @throws IllegalArgumentException if `n` is negative or the filled region
+     * would exceed the initialized region.
      */
     public fun advance(n: Int) {
+        require(n >= 0) { "n must be non-negative" }
         require(n <= Int.MAX_VALUE - filled) { "filled overflow" }
         setFilled(filled + n)
     }
@@ -161,10 +175,13 @@ public class ReadBuf private constructor(
      * Sets the size of the filled region of the buffer.
      *
      * The number of initialized bytes is not changed. This can shrink the
-     * filled region in addition to growing it.
+     * filled region in addition to growing it, for example when a reader
+     * compresses data in place.
+     *
+     * @throws IllegalArgumentException if `n` is outside the initialized region.
      */
     public fun setFilled(n: Int) {
-        require(n <= initialized) { "filled must not become larger than initialized" }
+        require(n in 0..initialized) { "filled must stay within the initialized region" }
         filled = n
     }
 
@@ -174,9 +191,11 @@ public class ReadBuf private constructor(
      * `ReadBuf` assumes that bytes are never de-initialized, so this method does
      * nothing when called with fewer bytes than are already known to be
      * initialized.
+     *
+     * The caller must ensure that `n` unfilled bytes have already been initialized.
      */
     public fun assumeInit(n: Int) {
-        require(n <= remaining()) { "n overflows remaining" }
+        require(n in 0..remaining()) { "n overflows remaining" }
         val new = filled + n
         if (new > initialized) {
             initialized = new
@@ -186,6 +205,8 @@ public class ReadBuf private constructor(
     /**
      * Appends data to the buffer, advancing the written position and possibly
      * also the initialized position.
+     *
+     * @throws IllegalArgumentException if the bytes exceed [remaining].
      */
     public fun putSlice(bytes: UByteArray) {
         require(remaining() >= bytes.size) {
@@ -205,18 +226,22 @@ public class ReadBuf private constructor(
     /**
      * Appends data to the buffer from a signed byte array.
      */
-    public fun putSlice(bytes: ByteArray) {
-        putSlice(UByteArray(bytes.size) { index -> bytes[index].toUByte() })
+    override fun putSlice(src: ByteArray) {
+        putSlice(src.asUByteArray())
     }
 
-    public fun remainingMut(): Int = remaining()
+    override fun remainingMut(): Int = remaining()
 
-    public fun advanceMut(count: Int) {
-        assumeInit(count)
-        advance(count)
+    // The caller guarantees that at least cnt unfilled bytes have been initialized.
+    override fun advanceMut(cnt: Int) {
+        assumeInit(cnt)
+        advance(cnt)
     }
 
-    public fun chunkMut(): UByteSlice = unfilledMut()
+    override fun chunkMut(): UninitSlice =
+        // This view covers exactly the unfilled region and writes through to its storage.
+        // UninitSlice never de-initializes the bytes it exposes.
+        UninitSlice.uninit(buffer.asByteArray())[start + filled..<end]
 
     public fun fmt(): String = toString()
 
@@ -260,7 +285,7 @@ public class UByteSlice public constructor(
     init {
         require(start >= 0) { "start must be non-negative" }
         require(size >= 0) { "size must be non-negative" }
-        require(start + size <= buffer.size) { "slice must fit inside the buffer" }
+        require(start <= buffer.size && size <= buffer.size - start) { "slice must fit inside the buffer" }
     }
 
     public fun isEmpty(): Boolean = size == 0
