@@ -75,4 +75,68 @@ struct TokioExportTests {
         #expect(stream.pollRead(cx: cx, buf: output).isReady)
         #expect(output.filledMut().isEmpty())
     }
+
+    @Test("BufWriter shutdown resumes partial writes before closing the stream")
+    func bufferedWriterBackpressureAndShutdown() {
+        let stream = Tokio.io.util.SimplexStream.Companion.shared.newUnsplit(maxBufSize: 2)
+        let writer = Tokio.io.util.BufWriter.Companion.shared.withCapacity(capacity: 8, inner: stream)
+        let input = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 4)
+        let bytes = input.initializeUnfilled()
+        bytes[0] = 128
+        bytes[1] = 255
+        bytes[2] = 7
+        bytes[3] = 8
+        input.advance(n: 4)
+        var wakes = 0
+        let cx = Tokio.io.Context(wakeup: { wakes += 1 })
+        let readCx = Tokio.io.Context(wakeup: {})
+        #expect(writer.getPinMut() === stream)
+        #expect(writer.pollWrite(cx: cx, buf: input.filled()).isReady)
+        #expect(Tokio.io.ReadBuf.Companion.shared.new(buffer: writer.buffer()).capacity() == 4)
+        let output = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 2)
+        #expect(stream.pollRead(cx: readCx, buf: output).isPending)
+        #expect(writer.pollShutdown(cx: cx).isPending)
+        #expect(stream.pollRead(cx: readCx, buf: output).isReady)
+        #expect(output.filledMut().size == 2)
+        #expect(output.filledMut()[0] == 128)
+        #expect(output.filledMut()[1] == 255)
+        #expect(wakes == 1)
+        #expect(writer.pollShutdown(cx: cx).isReady)
+        #expect(Tokio.io.ReadBuf.Companion.shared.new(buffer: writer.buffer()).capacity() == 0)
+        output.clear()
+        #expect(stream.pollRead(cx: readCx, buf: output).isReady)
+        #expect(output.filledMut().size == 2)
+        #expect(output.filledMut()[0] == 7)
+        #expect(output.filledMut()[1] == 8)
+        output.clear()
+        #expect(stream.pollRead(cx: readCx, buf: output).isReady)
+        #expect(output.filledMut().isEmpty())
+    }
+
+    @Test("BufWriter removes the sent prefix when a fixed destination becomes full")
+    func bufferedWriterZeroWriteRetainsSuffix() {
+        let storage = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 2)
+        _ = storage.initializeUnfilled()
+        storage.advance(n: 2)
+        let inner = Tokio.io.CursorAsyncWrite(bytes: storage.filled(), position: 0)
+        let writer = Tokio.io.util.BufWriter.Companion.shared.withCapacity(capacity: 8, inner: inner)
+        let input = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 4)
+        let bytes = input.initializeUnfilled()
+        bytes[0] = 0
+        bytes[1] = 1
+        bytes[2] = 2
+        bytes[3] = 3
+        input.advance(n: 4)
+        let cx = Tokio.io.Context(wakeup: {})
+        #expect(writer.pollWrite(cx: cx, buf: input.filled()).isReady)
+        #expect(writer.pollFlush(cx: cx).isReady)
+        #expect(inner.position() == 2)
+        let suffix = Tokio.io.ReadBuf.Companion.shared.new(buffer: writer.buffer()).initializedMut()
+        #expect(suffix.size == 2)
+        #expect(suffix[0] == 2)
+        #expect(suffix[1] == 3)
+        let sent = Tokio.io.ReadBuf.Companion.shared.new(buffer: inner.asSlice()).initializedMut()
+        #expect(sent[0] == 0)
+        #expect(sent[1] == 1)
+    }
 }
