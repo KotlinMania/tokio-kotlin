@@ -139,4 +139,80 @@ struct TokioExportTests {
         #expect(sent[0] == 0)
         #expect(sent[1] == 1)
     }
+
+    @Test("Cursor buffered reads preserve full-width positions beyond EOF")
+    func cursorBeyondEofPreservesItsPosition() {
+        let input = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 3)
+        let bytes = input.initializeUnfilled()
+        bytes[0] = 10
+        bytes[1] = 20
+        bytes[2] = 30
+        input.advance(n: 3)
+        let positions: [UInt64] = [UInt64(Int32.max) + 1, UInt64(UInt32.max) + 1, UInt64.max]
+        let cx = Tokio.io.Context(wakeup: {})
+        for position in positions {
+            let reader = Tokio.io.CursorAsyncBufRead(bytes: input.filled(), position: position)
+            #expect(reader.pollFillBuf(cx: cx).isReady)
+            reader.consume(amt: 0)
+            #expect(reader.position() == position)
+            let output = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 2)
+            output.initializeUnfilledTo(n: 1)[0] = 99
+            output.advance(n: 1)
+            #expect(reader.pollRead(cx: cx, buf: output).isReady)
+            #expect(output.filledMut().size == 1)
+            #expect(output.filledMut()[0] == 99)
+            #expect(reader.position() == position)
+        }
+    }
+
+    @Test("BufReader clamps large consume counts without replaying data")
+    func bufferedReaderConsumeDoesNotOverflow() {
+        let input = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 6)
+        let bytes = input.initializeUnfilled()
+        for index in 0..<6 {
+            bytes[Int32(index)] = UInt8(index)
+        }
+        input.advance(n: 6)
+        let inner = Tokio.io.ByteSliceAsyncRead(bytes: input.filled())
+        let reader = Tokio.io.util.BufReader.Companion.shared.withCapacity(capacity: 4, inner: inner)
+        let cx = Tokio.io.Context(wakeup: {})
+        #expect(reader.getPinMut() === inner)
+        #expect(reader.pollFillBuf(cx: cx).isReady)
+        reader.consume(amt: 1)
+        reader.consume(amt: Int32.max)
+        #expect(Tokio.io.ReadBuf.Companion.shared.new(buffer: reader.buffer()).capacity() == 0)
+        let output = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 4)
+        #expect(reader.pollRead(cx: cx, buf: output).isReady)
+        #expect(output.filledMut().size == 2)
+        #expect(output.filledMut()[0] == 4)
+        #expect(output.filledMut()[1] == 5)
+    }
+
+    @Test("BufReader resumes a pending fill and drains buffered data before EOF")
+    func bufferedReaderPendingFillAndShutdown() {
+        let stream = Tokio.io.util.SimplexStream.Companion.shared.newUnsplit(maxBufSize: 4)
+        let reader = Tokio.io.util.BufReader.Companion.shared.withCapacity(capacity: 4, inner: stream)
+        var wakes = 0
+        let cx = Tokio.io.Context(wakeup: { wakes += 1 })
+        #expect(reader.pollFillBuf(cx: cx).isPending)
+        let input = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 2)
+        let bytes = input.initializeUnfilled()
+        bytes[0] = 128
+        bytes[1] = 255
+        input.advance(n: 2)
+        #expect(stream.pollWrite(cx: cx, buf: input.filled()).isReady)
+        #expect(wakes == 1)
+        #expect(reader.pollFillBuf(cx: cx).isReady)
+        #expect(Tokio.io.ReadBuf.Companion.shared.new(buffer: reader.buffer()).capacity() == 2)
+        #expect(stream.pollShutdown(cx: cx).isReady)
+        let output = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 1)
+        #expect(reader.pollRead(cx: cx, buf: output).isReady)
+        #expect(output.filledMut()[0] == 128)
+        output.clear()
+        #expect(reader.pollRead(cx: cx, buf: output).isReady)
+        #expect(output.filledMut()[0] == 255)
+        output.clear()
+        #expect(reader.pollRead(cx: cx, buf: output).isReady)
+        #expect(output.filledMut().isEmpty())
+    }
 }
