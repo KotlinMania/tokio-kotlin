@@ -27,8 +27,6 @@ import kotlinx.atomicfu.locks.synchronized
  *
  * Closing a `DuplexStream`
  *
- * Close an endpoint explicitly with `close`, or scope its lifetime with `use`.
- *
  * If one end of the `DuplexStream` channel is closed, any pending reads on the
  * other side will continue to read data until the buffer is drained, then they
  * will signal end-of-file by returning zero bytes. Any writes to the other
