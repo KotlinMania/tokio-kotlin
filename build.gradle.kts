@@ -490,10 +490,21 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(libs.bytes.kotlin)
+            implementation(libs.socket2.kotlin)
+            implementation(libs.tracing.kotlin)
+            implementation(libs.libc.kotlin)
             implementation(commonMainDependencyBundle)
+        }
+        mingwMain.dependencies {
+            implementation(libs.windows.sys.kotlin)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.futures.kotlin)
+            implementation(libs.tempfile.kotlin)
+            implementation(libs.tokio.util.kotlin)
+            implementation(libs.async.stream.kotlin)
+            implementation(libs.rand.kotlin)
             commonTestDependencyBundle?.let { implementation(it) }
         }
         if (benchmarkEnabled) {
