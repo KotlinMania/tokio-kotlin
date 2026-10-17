@@ -1,6 +1,17 @@
 [versions]
 kotlin = "2.4.20"
 coroutines = "1.11.0"
+atomicfu = "0.32.1"
+bytes = "0.2.1"
+socket2 = "0.1.3"
+futures = "0.2.1"
+libc = "0.1.9"
+tempfile = "0.1.0"
+tokioUtil = "0.1.0"
+tracing = "0.1.0"
+windowsSys = "0.1.2"
+asyncStream = "0.1.1"
+rand = "0.1.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
 collectionsImmutable = "0.5.2"
@@ -20,6 +31,17 @@ kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kot
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 
 [libraries]
+bytes-kotlin = { module = "io.github.kotlinmania:bytes-kotlin", version.ref = "bytes" }
+socket2-kotlin = { module = "io.github.kotlinmania:socket2-kotlin", version.ref = "socket2" }
+futures-kotlin = { module = "io.github.kotlinmania:futures-kotlin", version.ref = "futures" }
+libc-kotlin = { module = "io.github.kotlinmania:libc-kotlin", version.ref = "libc" }
+tempfile-kotlin = { module = "io.github.kotlinmania:tempfile-kotlin", version.ref = "tempfile" }
+tokio-util-kotlin = { module = "io.github.kotlinmania:tokio-util-kotlin", version.ref = "tokioUtil" }
+tracing-kotlin = { module = "io.github.kotlinmania:tracing-kotlin", version.ref = "tracing" }
+windows-sys-kotlin = { module = "io.github.kotlinmania:windows-sys-kotlin", version.ref = "windowsSys" }
+async-stream-kotlin = { module = "io.github.kotlinmania:async-stream-kotlin", version.ref = "asyncStream" }
+rand-kotlin = { module = "io.github.kotlinmania:rand-kotlin", version.ref = "rand" }
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -29,6 +51,7 @@ kotlinx-benchmark-runtime = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-
 
 [bundles]
 tokio-kotlin-commonMain = [
+  "kotlinx-atomicfu",
   "kotlinx-coroutines-core",
   "kotlinx-serialization-core",
   "kotlinx-serialization-json",
