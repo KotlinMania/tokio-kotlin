@@ -4,14 +4,14 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 21/372 (5.6%)
-- **Function parity:** 134/3333 matched (target 233) — 4.0%
-- **Class/type parity:** 20/662 matched (target 35) — 3.0%
-- **Combined symbol parity:** 154/3995 matched (target 268) — 3.9%
-- **Average inline-code cosine:** 0.52 (function body across 21 matched files)
-- **Average documentation cosine:** 0.61 (doc text across 21 matched files)
+- **Files Present:** 27/372 (7.3%)
+- **Function parity:** 164/3329 matched (target 280) — 4.9%
+- **Class/type parity:** 21/662 matched (target 43) — 3.2%
+- **Combined symbol parity:** 185/3991 matched (target 323) — 4.6%
+- **Average inline-code cosine:** 0.48 (function body across 27 matched files)
+- **Average documentation cosine:** 0.58 (doc text across 27 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 15 files with <0.60 function similarity
+- **Critical Issues:** 21 files with <0.60 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
@@ -56,7 +56,7 @@ Based on AST analysis, here are the concrete next steps.
 - **Action:** Deep review - likely missing major functionality
 
 ### 5. util.mem
-- **Similarity:** 0.75 (needs 10% improvement)
+- **Similarity:** 0.73 (needs 12% improvement)
 - **Dependencies:** 13
 - **Priority Score:** 13001703.0
 - **Functions:** 15/15 matched (target 26)
@@ -151,7 +151,7 @@ Every matched file is listed below with function and type symbol parity.
 ### 5. util.mem
 
 - **Target:** `util.Mem`
-- **Similarity:** 0.75
+- **Similarity:** 0.73
 - **Dependents:** 13
 - **Priority Score:** 13001703.0
 - **Functions:** 15/15 matched (target 26)
@@ -203,7 +203,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/2 matched
 - **Missing types:** `Output`
 
-### 10. io.async_read
+### 10. io.async_buf_read
+
+- **Target:** `io.AsyncBufRead`
+- **Similarity:** 0.33
+- **Dependents:** 7
+- **Priority Score:** 7000306.5
+- **Functions:** 2/2 matched (target 8)
+- **Missing functions:** _none_
+- **Types:** 1/1 matched (target 3)
+- **Missing types:** _none_
+
+### 11. io.async_read
 
 - **Target:** `io.AsyncRead`
 - **Similarity:** 0.40
@@ -214,18 +225,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 11. io.read_buf
+### 12. io.read_buf
 
 - **Target:** `io.ReadBuf`
-- **Similarity:** 0.53
+- **Similarity:** 0.48
 - **Dependents:** 4
-- **Priority Score:** 4002604.8
-- **Functions:** 25/25 matched (target 35)
-- **Missing functions:** _none_
+- **Priority Score:** 4032605.2
+- **Functions:** 22/25 matched (target 32)
+- **Missing functions:** `slice_to_uninit_mut`, `slice_assume_init`, `slice_assume_init_mut`
 - **Types:** 1/1 matched (target 2)
 - **Missing types:** _none_
 
-### 12. util.sync_wrapper
+### 13. util.sync_wrapper
 
 - **Target:** `util.SyncWrapper`
 - **Similarity:** 0.32
@@ -236,7 +247,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 13. util.bit
+### 14. util.bit
 
 - **Target:** `util.Bit`
 - **Similarity:** 0.58
@@ -247,7 +258,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 14. util.memchr
+### 15. util.memchr
 
 - **Target:** `util.Memchr`
 - **Similarity:** 0.38
@@ -259,7 +270,31 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 3/3 matched
 
-### 15. util.empty
+### 16. util.buf_reader
+
+- **Target:** `util.BufReader`
+- **Similarity:** 0.40
+- **Dependents:** 0
+- **Priority Score:** 102106.0
+- **Functions:** 11/20 matched (target 11)
+- **Missing functions:** `start_seek`, `poll_complete`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `fmt`, `assert_unpin`
+- **Types:** 0/1 matched
+- **Missing types:** `SeekState`
+- **Tests:** 0/1 matched
+
+### 17. util.buf_writer
+
+- **Target:** `util.BufWriter`
+- **Similarity:** 0.47
+- **Dependents:** 0
+- **Priority Score:** 82105.3
+- **Functions:** 13/20 matched (target 14)
+- **Missing functions:** `start_seek`, `poll_complete`, `poll_read`, `poll_fill_buf`, `consume`, `fmt`, `assert_unpin`
+- **Types:** 0/1 matched
+- **Missing types:** `SeekState`
+- **Tests:** 0/1 matched
+
+### 18. util.empty
 
 - **Target:** `util.Empty`
 - **Similarity:** 0.38
@@ -271,7 +306,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 16. util.cacheline
+### 19. util.cacheline
 
 - **Target:** `util.Cacheline`
 - **Similarity:** 0.00
@@ -282,7 +317,7 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/2 matched (target 1)
 - **Missing types:** `Target`
 
-### 17. util.rand
+### 20. util.rand
 
 - **Target:** `util.Rand`
 - **Similarity:** 0.35
@@ -293,7 +328,29 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 2/2 matched
 - **Missing types:** _none_
 
-### 18. util.sink
+### 21. io.stdout
+
+- **Target:** `io.Stdout`
+- **Similarity:** 0.39
+- **Dependents:** 0
+- **Priority Score:** 20506.1
+- **Functions:** 3/5 matched (target 7)
+- **Missing functions:** `as_raw_fd`, `as_fd`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+
+### 22. io.stderr
+
+- **Target:** `io.Stderr`
+- **Similarity:** 0.39
+- **Dependents:** 0
+- **Priority Score:** 20506.1
+- **Functions:** 3/5 matched (target 7)
+- **Missing functions:** `as_raw_fd`, `as_fd`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+
+### 23. util.sink
 
 - **Target:** `util.Sink`
 - **Similarity:** 0.47
@@ -305,7 +362,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 19. util.repeat
+### 24. io.stdin
+
+- **Target:** `io.Stdin`
+- **Similarity:** 0.24
+- **Dependents:** 0
+- **Priority Score:** 20307.6
+- **Functions:** 1/3 matched
+- **Missing functions:** `as_raw_fd`, `as_fd`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+
+### 25. util.repeat
 
 - **Target:** `util.Repeat`
 - **Similarity:** 0.32
@@ -317,18 +385,18 @@ Every matched file is listed below with function and type symbol parity.
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 20. io.split
+### 26. io.split
 
 - **Target:** `io.Split`
-- **Similarity:** 0.72
+- **Similarity:** 0.71
 - **Dependents:** 0
-- **Priority Score:** 1102.8
+- **Priority Score:** 1102.9
 - **Functions:** 10/10 matched (target 15)
 - **Missing functions:** _none_
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 21. util.metric_atomics
+### 27. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
 - **Similarity:** 0.58
