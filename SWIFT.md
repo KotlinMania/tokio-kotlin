@@ -42,30 +42,12 @@ proven end-to-end with a working `swift test` invocation against the
 
 ### The five changes
 
-1. **`build.gradle.kts`** — **both** iOS Simulator framework binaries
-   (`iosSimulatorArm64` *and* `iosX64`) now have `isStatic = true`.
-   The Swift Export SPM bridge expects a static framework for the iOS
-   Simulator so that the SPM linker can pull in the symbol
-   implementations directly. Both simulator slices must match — if
-   `iosSimulatorArm64` is static and `iosX64` is left dynamic, the
-   `assembleDebugIosSimulatorFatFrameworkFor<Name>XCFramework` task
-   fails with:
-
-   ```
-   Cannot create a fat framework from:
-     <Name> - arm64 - static
-     <Name> - x64 - dynamic
-     All input frameworks must be either static or dynamic
-   ```
-
-   The other Apple targets (`iosArm64`, `tvosArm64`,
-   `tvosSimulatorArm64`, `watchos*`, `macosArm64`) stay dynamic.
-
-   > **Note**: earlier versions of this recipe and of `apply.sh` flipped
-   > only `iosSimulatorArm64`. Repos that landed the rollout before this
-   > correction need a follow-up commit adding `isStatic = true` to
-   > `iosX64`. http-kotlin's `build.gradle.kts:218-231` is the working
-   > reference shape.
+1. **`build.gradle.kts`** — the retained iOS device and simulator framework
+   binaries (`iosArm64` and `iosSimulatorArm64`) use `isStatic = true`,
+   matching the current template. Swift Export consumes their static symbols.
+   Apple x64 targets are retired under `AGENTS.md`; do not add an Intel
+   simulator declaration or task. The other retained Apple frameworks keep
+   the template's linkage settings.
 
 2. **`.github/workflows/swift.yml`** — a new platform workflow with a
    `workflow_call:` trigger, matching the shape of the existing
@@ -75,7 +57,7 @@ proven end-to-end with a working `swift test` invocation against the
        as input. The list includes `BUILT_PRODUCTS_DIR`,
        `TARGET_BUILD_DIR`, `SDK_NAME=macosx`, `CONFIGURATION=Debug`,
        `ARCHS=arm64`, `FRAMEWORKS_FOLDER_PATH=Frameworks`,
-       `MACOSX_DEPLOYMENT_TARGET=14.0`, and crucially
+       `MACOSX_DEPLOYMENT_TARGET=15.0`, and crucially
        `DEPLOYMENT_TARGET_SETTING_NAME=MACOSX_DEPLOYMENT_TARGET` —
        which Xcode normally injects per-target but the Kotlin plugin
        has no default for. Without it,
@@ -705,35 +687,11 @@ become deletable.
    }
    ```
 
-   **9b — Relax `allWarningsAsErrors` for the `compileSwiftExport*` task
-   family — and ONLY for the coroutine-runtime case.** Once 9a is on, the
-   plugin emits a generated `build/SwiftExport/<t>/<c>/KotlinCoroutineSupport/
-   KotlinCoroutineSupport.kt` runtime module that is itself not
-   warning-clean (kotlinx.coroutines inheritance opt-in, useless-elvis,
-   unchecked `SwiftFlowIterator` casts). That is **plugin-generated
-   runtime we do not author and cannot edit** (it is regenerated every
-   build), so there is no source fix.
-
-   ```kotlin
-   tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
-       if (name.startsWith("compileSwiftExport")) {
-           compilerOptions.allWarningsAsErrors.set(false)
-       }
-   }
-   ```
-
-   > **This is NOT the gap-#8 anti-pattern.** Gap #8 forbids this exact
-   > block when it is used to silence unchecked-cast warnings in the
-   > bridge for *your own* public API — because there you fix the source
-   > (rename it, make it `internal`, or use a named `fun interface`). The
-   > distinction is *whose code emits the warning*: gap #8 = your bridge
-   > (fix source, never relax); gap #9 = the generated
-   > `KotlinCoroutineSupport.kt` coroutine runtime (no source exists,
-   > relax is the only option). Before relying on 9b, confirm with the
-   > gap-#8 audit grep that your own bridge files have zero unchecked
-   > casts; if they do, fix those at the source first. Do NOT delete this
-   > block as "the forbidden gap-#8 block" — it is load-bearing for any
-   > Flow-exporting repo.
+   **9b — Keep compiler warnings fatal.** The workspace `AGENTS.md` requires
+   `allWarningsAsErrors = true` for every Kotlin compilation, including
+   `compileSwiftExport*`. Inspect generated bridge and coroutine-runtime
+   diagnostics when this gate fails. Fix the originating API or compiler issue;
+   a failed generated-runtime compilation is a build failure, not a test pass.
 
    **9c — Disable the Kotlin/Native incremental cache.** Linking the
    Swift Export binary builds a K/N cache for `…_swiftExportMain.klib`,
@@ -770,7 +728,7 @@ become deletable.
            generatedPackageSwift.writeText(
                text.replaceFirst(
                    Regex("(name:\\s*\"[^\"]*\",)"),
-                   "$1\n    platforms: [.macOS(.v14)],",
+                   "$1\n    platforms: [.macOS(\"15.0\")],",
                ),
            )
        }
@@ -778,7 +736,7 @@ become deletable.
    ```
 
    Also give `swift-test-harness/Package.swift` the same
-   `platforms: [.macOS(.v14)]`. If a prior failed run cached a bad
+   `platforms: [.macOS("15.0")]`. If a prior failed run cached a bad
    manifest, clear `swift-test-harness/.build` once.
 
    **Where Flow-exporting symbols live in the generated package.** With
@@ -1457,7 +1415,7 @@ and no `*Test` run is a platform building-but-not-testing.
 **Honest limits (compile-only, by physics — not laziness).**
 `androidNative*` (ELF for Android ABIs, needs an emulator per ABI),
 `linuxArm64` on an x64 runner, and the device Apple slices (`iosArm64`,
-`tvosArm64`, `watchosArm64`, `watchosDeviceArm64`, which have no
+`tvosArm64`, `watchosDeviceArm64`, which have no
 host-runnable test task) can only be compiled/linked. Their `actual`s
 share the `appleMain`/`iosMain`/etc. source sets that the corresponding
 **simulator** test exercises, so the same code is covered — state this
@@ -1501,14 +1459,9 @@ Two reasons:
 - **`swift.yml` runs on `runs-on: macos-26`** — not `macos-latest`. The Kotlin/Native 2.3.x SDK cache requires it.
 - **Never add `maxim-lobanov/setup-xcode@v1`** or any other third-party Xcode setup action. Third-party actions cause `startup_failure` on the KotlinMania allowlist.
 - **`swift test` is wired into the Kotlin `test` task.** A Swift Export failure must surface on `./gradlew test` locally. Do not push and let remote CI find it — by that point you've burned a CI run.
-- **iOS Simulator XCFramework fat-stage rule.** Both `iosSimulatorArm64` AND `iosX64` must be `isStatic = true`. Mixing one static / one dynamic fails `assembleDebugIosSimulatorFatFramework<Name>` with:
-  ```
-  Cannot create a fat framework from:
-    <Name> - arm64 - static
-    <Name> - x64 - dynamic
-    All input frameworks must be either static or dynamic
-  ```
-  This is **gap #7** in the rollout. Earlier rollouts flipped only `iosSimulatorArm64`; if a repo still has the asymmetric shape, fix `iosX64` too in the same commit.
+- **iOS framework linkage.** Keep `iosArm64` and `iosSimulatorArm64` static,
+  matching the current template. Apple x64 targets are retired; the build and
+  workflow task lists contain only the retained ARM64 Apple targets.
 
 ### The four hazard classes (what makes Swift Export fail under `-Werror`)
 

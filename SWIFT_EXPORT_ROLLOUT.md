@@ -1,5 +1,8 @@
 # Swift Export Rollout — Recipe for the Claude GitHub Agent
 
+> Historical rollout reference. Current build requirements and verification
+> commands are in `AGENTS.md`, `SWIFT.md`, and `FIX_SWIFT.md`.
+
 > **Self-contained instruction set.** This file lives at the root of every
 > repository that has the canonical KotlinMania Swift Export rollout
 > committed to its `automation/swift-export-rollout` branch. The Claude
@@ -42,30 +45,12 @@ proven end-to-end with a working `swift test` invocation against the
 
 ### The five changes
 
-1. **`build.gradle.kts`** — **both** iOS Simulator framework binaries
-   (`iosSimulatorArm64` *and* `iosX64`) now have `isStatic = true`.
-   The Swift Export SPM bridge expects a static framework for the iOS
-   Simulator so that the SPM linker can pull in the symbol
-   implementations directly. Both simulator slices must match — if
-   `iosSimulatorArm64` is static and `iosX64` is left dynamic, the
-   `assembleDebugIosSimulatorFatFrameworkFor<Name>XCFramework` task
-   fails with:
-
-   ```
-   Cannot create a fat framework from:
-     <Name> - arm64 - static
-     <Name> - x64 - dynamic
-     All input frameworks must be either static or dynamic
-   ```
-
-   The other Apple targets (`iosArm64`, `tvosArm64`,
-   `tvosSimulatorArm64`, `watchos*`, `macosArm64`) stay dynamic.
-
-   > **Note**: earlier versions of this recipe and of `apply.sh` flipped
-   > only `iosSimulatorArm64`. Repos that landed the rollout before this
-   > correction need a follow-up commit adding `isStatic = true` to
-   > `iosX64`. http-kotlin's `build.gradle.kts:218-231` is the working
-   > reference shape.
+1. **`build.gradle.kts`** — the retained iOS device and simulator framework
+   binaries (`iosArm64` and `iosSimulatorArm64`) use `isStatic = true`,
+   matching the current template. Swift Export consumes their static symbols.
+   Apple x64 targets are retired under `AGENTS.md`; do not add an Intel
+   simulator declaration or task. The other retained Apple frameworks keep
+   the template's linkage settings.
 
 2. **`.github/workflows/swift.yml`** — a new platform workflow with a
    `workflow_call:` trigger, matching the shape of the existing
@@ -75,7 +60,7 @@ proven end-to-end with a working `swift test` invocation against the
        as input. The list includes `BUILT_PRODUCTS_DIR`,
        `TARGET_BUILD_DIR`, `SDK_NAME=macosx`, `CONFIGURATION=Debug`,
        `ARCHS=arm64`, `FRAMEWORKS_FOLDER_PATH=Frameworks`,
-       `MACOSX_DEPLOYMENT_TARGET=14.0`, and crucially
+       `MACOSX_DEPLOYMENT_TARGET=15.0`, and crucially
        `DEPLOYMENT_TARGET_SETTING_NAME=MACOSX_DEPLOYMENT_TARGET` —
        which Xcode normally injects per-target but the Kotlin plugin
        has no default for. Without it,

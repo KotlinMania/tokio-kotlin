@@ -15,7 +15,7 @@ SDK_NAME=macosx \
 CONFIGURATION=Debug \
 ARCHS=arm64 \
 FRAMEWORKS_FOLDER_PATH=Frameworks \
-MACOSX_DEPLOYMENT_TARGET=14.0 \
+MACOSX_DEPLOYMENT_TARGET=15.0 \
 DEPLOYMENT_TARGET_SETTING_NAME=MACOSX_DEPLOYMENT_TARGET \
 ./gradlew embedSwiftExportForXcode --no-configuration-cache --console=plain
 ```
@@ -78,7 +78,7 @@ Do not use these to make Swift Export pass:
 - `@JvmMultifileClass`
 - compatibility `typealias` declarations that preserve a bad exported name
 - disabling targets
-- scoping `allWarningsAsErrors=false` to hide warnings from our own API bridge
+- scoping `allWarningsAsErrors=false` to hide warnings from any Kotlin compilation
 - adding ordinary coroutines jars or buildscript jars for the
   `IntellijCoroutines` worker error
 
@@ -276,10 +276,10 @@ swiftExport {
 }
 ```
 
-For coroutine/runtime Swift Export generated-code warnings only, `SWIFT.md`
-allows relaxing `allWarningsAsErrors` for generated `compileSwiftExport*`
-and `linkSwiftExportBinary*` tasks. Before using that exception, confirm
-our own bridge has no source-shape errors.
+Keep `allWarningsAsErrors = true`, including generated Swift Export tasks,
+as required by the canonical workspace `AGENTS.md`. A generated-runtime
+warning that prevents compilation is a build failure. Inspect its source
+and compiler origin before claiming Swift test success.
 
 ## Verification
 

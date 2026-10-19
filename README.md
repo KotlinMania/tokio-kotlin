@@ -293,6 +293,9 @@ dependencies {
 
 ### Building
 
+Swift Export and its test harness require macOS 15 or newer. The Swift
+workflow uses the current template’s macOS 26 runner for its Xcode SDK.
+
 ```bash
 ./gradlew build
 ./gradlew test

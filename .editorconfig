@@ -22,3 +22,4 @@ ktlint_standard_kdoc = disabled
 ktlint_standard_max-line-length = disabled
 ktlint_standard_no-consecutive-comments = disabled
 ktlint_standard_property-naming = disabled
+ktlint_standard_no-empty-file = disabled
