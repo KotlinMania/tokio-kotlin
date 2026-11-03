@@ -26,7 +26,6 @@ performance:
 
 style:
   active: true
-  AbstractClassCanBeConcreteClass: { active: false }
   MagicNumber: { active: false }
   NewLineAtEndOfFile: { active: false }
   MayBeConstant: { active: false }
@@ -49,6 +48,7 @@ style:
   UnusedPrivateProperty: { active: false }
   RedundantVisibilityModifier: { active: false }
   AbstractClassCanBeInterface: { active: false }
+  AbstractClassCanBeConcreteClass: { active: false }
 
 complexity:
   active: true

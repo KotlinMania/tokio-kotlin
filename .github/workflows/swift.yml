@@ -28,13 +28,13 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v6.0.1
+        uses: actions/setup-java@v6.1.0
         with:
           distribution: zulu
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0
+        uses: gradle/actions/setup-gradle@v6.4.0
 
       # NOTE: do NOT add a `maxim-lobanov/setup-xcode` step here.
       # KotlinMania's enterprise GitHub Actions policy does not whitelist
@@ -77,19 +77,20 @@ jobs:
       #     KotlinRuntimeSupport, ExportedKotlinPackages, KotlinRuntime.
       - name: Build Swift Export package
         env:
-          BUILT_PRODUCTS_DIR: ${{ github.workspace }}/build/swift-test
-          TARGET_BUILD_DIR: ${{ github.workspace }}/build/swift-test
+          BUILT_PRODUCTS_DIR: ${{ github.workspace }}/build/swift-test/Debug
+          TARGET_BUILD_DIR: ${{ github.workspace }}/build/swift-test/Debug
           SDK_NAME: macosx
           CONFIGURATION: Debug
           ARCHS: arm64
           FRAMEWORKS_FOLDER_PATH: Frameworks
           MACOSX_DEPLOYMENT_TARGET: "15.0"
           DEPLOYMENT_TARGET_SETTING_NAME: MACOSX_DEPLOYMENT_TARGET
+          XCODE_XCCONFIG_FILE: ${{ github.workspace }}/verification/strict-swift.xcconfig
         run: ./gradlew embedSwiftExportForXcode --no-configuration-cache
 
       - name: Run swift test against Kotlin-exported module
-        working-directory: swift-test-harness
-        run: swift test
+        working-directory: src/swift/swift-test-harness
+        run: swift test -v -Xswiftc -swift-version -Xswiftc 6 -Xswiftc -warnings-as-errors
 
       - name: Upload Swift Export artifacts
         if: success() || failure()
@@ -97,8 +98,8 @@ jobs:
         with:
           name: swift-export-artifacts
           path: |
-            build/swift-test/lib*.a
-            build/swift-test/*.swiftmodule/
+            build/swift-test/Debug/lib*.a
+            build/swift-test/Debug/*.swiftmodule/
             build/SPMPackage/macosArm64/Debug/
           retention-days: 7
           if-no-files-found: warn

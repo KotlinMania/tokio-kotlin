@@ -17,13 +17,13 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v6.0.1
+        uses: actions/setup-java@v6.1.0
         with:
           distribution: zulu
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6.3.0
+        uses: gradle/actions/setup-gradle@v6.4.0
 
       - name: Build and test macOS targets
         run: >
@@ -31,6 +31,21 @@ jobs:
           compileKotlinMacosArm64
           macosArm64Test
           --no-configuration-cache
+
+      - name: Stage the real KMP root on its Apple-capable host
+        run: |
+          ./gradlew publishKotlinMultiplatformPublicationToCentralPortalStagingRepository --no-configuration-cache
+          git rev-parse HEAD > build/staging-deploy.source-head
+
+      - name: Preserve the same-head root publication
+        uses: actions/upload-artifact@v7
+        with:
+          name: kmp-root-publication-${{ github.sha }}
+          path: |
+            build/staging-deploy/
+            build/staging-deploy.source-head
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload test reports (macOS)
         if: success() || failure()
