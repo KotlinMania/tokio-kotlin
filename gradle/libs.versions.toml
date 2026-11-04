@@ -11,6 +11,7 @@ ktlintEngine = "1.8.0"
 kotlinxBenchmark = "0.5.0"
 atomicfu = "0.32.1"
 bytes = "0.2.2"
+serde = "0.1.11"
 socket2 = "0.2.0"
 futures = "0.2.1"
 libc = "0.1.11"
@@ -20,6 +21,9 @@ tracing = "0.1.0"
 windowsSys = "0.1.2"
 asyncStream = "0.1.1"
 rand = "0.2.0"
+
+tokioStreamKotlin = "0.1.1"
+tokioTestKotlin = "0.1.1"
 
 [plugins]
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
@@ -50,10 +54,17 @@ async-stream-kotlin = { module = "io.github.kotlinmania:async-stream-kotlin", ve
 rand-kotlin = { module = "io.github.kotlinmania:rand-kotlin", version.ref = "rand" }
 kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 
+serde-core = { module = "io.github.kotlinmania:serde-core", version.ref = "serde" }
+
+tokio-stream-kotlin = { module = "io.github.kotlinmania:tokio-stream-kotlin", version.ref = "tokioStreamKotlin" }
+tokio-test-kotlin = { module = "io.github.kotlinmania:tokio-test-kotlin", version.ref = "tokioTestKotlin" }
+
 [bundles]
 tokio-kotlin-commonMain = [
+  "futures-kotlin",
   "kotlinx-atomicfu",
   "kotlinx-coroutines-core",
   "kotlinx-datetime",
   "collections-immutable",
 ]
+tokio-kotlin-commonMainApi = ["bytes-kotlin", "serde-core"]

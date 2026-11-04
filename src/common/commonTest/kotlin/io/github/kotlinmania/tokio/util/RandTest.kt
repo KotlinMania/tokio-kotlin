@@ -6,6 +6,16 @@ import kotlin.test.assertTrue
 
 class RandTest {
     @Test
+    fun zeroBoundStillAdvancesGenerator() {
+        val seed = RngSeed.fromPair(111u, 222u)
+        val actual = FastRand(seed)
+        val expected = FastRand(seed)
+        expected.fastrand()
+        assertEquals(0u, actual.fastrandN(0u))
+        assertEquals(expected.fastrand(), actual.fastrand())
+    }
+
+    @Test
     fun testRngSeedDeterminism() {
         val seed = RngSeed(12345u, 67890u)
         val rng1 = FastRand(seed)

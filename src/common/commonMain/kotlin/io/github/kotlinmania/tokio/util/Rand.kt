@@ -30,8 +30,12 @@ public class RngSeed(
             if (two == 0u) {
                 two = 1u
             }
-            return RngSeed(one, two)
+            return fromPair(one, two)
         }
+
+        public fun fromPair(s: UInt, r: UInt): RngSeed = RngSeed(s, r)
+
+        internal fun new(): RngSeed = random()
 
         public fun random(): RngSeed {
             val seed = Random.nextLong().toULong()
@@ -64,8 +68,13 @@ public class FastRand(
         return s0 + s1
     }
 
+    public companion object {
+        internal fun new(): FastRand = fromSeed(RngSeed.new())
+
+        internal fun fromSeed(seed: RngSeed): FastRand = FastRand(seed)
+    }
+
     public fun fastrandN(n: UInt): UInt {
-        if (n == 0u) return 0u
         val mul = fastrand().toULong() * n.toULong()
         return (mul shr 32).toUInt()
     }
