@@ -4,7 +4,7 @@ The Android KMP plugin owns the Android AAR publication. These checks validate t
 publication; they do not attach another artifact, flatten platform targets, alter
 versions, or expose all implementation dependencies.
 
-## Template contract
+## Publication contract
 
 Keep private dependencies in `project.dependencies.commonMainBundle`. Put only
 reviewed public signature dependencies in a catalog bundle selected by the optional
@@ -19,8 +19,7 @@ Before `verifyAndroidPublication`, set these normal Gradle properties:
   `group:root-module:actual-Android-POM-module`. Use the published POM module;
   some external KMP libraries legitimately select JVM artifacts.
 
-The empty template has no project API. Its acceptance contract intentionally
-requires a real project class rather than accepting an empty or unrelated JAR.
+Publication acceptance requires a real public Tokio class rather than an empty or unrelated JAR.
 The task stages the existing root and Android publications, then checks root
 redirects, owning-root component URLs, both Android AAR variants, payload hashes,
 manifest, public bytecode and POM packaging/compile dependencies. It does not
@@ -31,7 +30,7 @@ this task. The existing Android and publish-dry-run workflows invoke it too.
 
 Use Java 21. Gradle compiles the helpers in buildSrc and supplies its bundled TOML parser. The workspace launcher
 `tools/sync_template.sh` routes to this implementation; its reviewable source is
-`verification/workspace-sync-template.sh` (install location: workspace `tools/`).
+`verification/sync-android-publication.sh` (install location: workspace `tools/`).
 The Java workspace diagnostic is available through `tools/shared-build-sync/run.sh diagnose`. Generic replacement remains disabled. The Android planner inventories hidden YAML and YML files and changes no destination workflows or pins.
 
 Example read-only plan from the shared workspace:

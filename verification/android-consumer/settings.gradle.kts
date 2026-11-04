@@ -28,4 +28,4 @@ dependencyResolutionManagement {
     }
     versionCatalogs { create("libs") { from(files("../../gradle/libs.versions.toml")) } }
 }
-rootProject.name = "template-android-publication-consumer"
+rootProject.name = "tokio-kotlin-android-publication-consumer"
