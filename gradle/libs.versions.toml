@@ -25,6 +25,8 @@ rand = "0.2.0"
 tokioStreamKotlin = "0.1.1"
 tokioTestKotlin = "0.1.1"
 
+androidxTestRunner = "1.7.0"
+
 [plugins]
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidKmp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -58,6 +60,8 @@ serde-core = { module = "io.github.kotlinmania:serde-core", version.ref = "serde
 
 tokio-stream-kotlin = { module = "io.github.kotlinmania:tokio-stream-kotlin", version.ref = "tokioStreamKotlin" }
 tokio-test-kotlin = { module = "io.github.kotlinmania:tokio-test-kotlin", version.ref = "tokioTestKotlin" }
+
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
 
 [bundles]
 tokio-kotlin-commonMain = [

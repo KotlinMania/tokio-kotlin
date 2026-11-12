@@ -7,6 +7,7 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtensi
 import com.android.build.api.withAndroid
 import dev.detekt.gradle.Detekt
 import groovy.json.JsonSlurper
+import io.github.kotlinmania.build.AndroidDeviceTestVerifier
 import io.github.kotlinmania.build.AndroidSdkSupport
 import io.github.kotlinmania.build.CentralPortalSupport
 import io.github.kotlinmania.build.FfiBuildSupport
@@ -666,7 +667,9 @@ kotlin {
 
         androidMain.dependencies {}
         named("androidHostTest").dependencies {}
-        named("androidDeviceTest").dependencies {}
+        named("androidDeviceTest").dependencies {
+            implementation(libs.androidx.test.runner)
+        }
 
         webMain.dependencies {}
         webTest.dependencies {}
@@ -1167,20 +1170,34 @@ val fullTargetBuildTaskNames =
         if (napiFfiEnabled) add("buildNode$ffiName")
     }
 
+tasks.matching { it.name == "connectedAndroidDeviceTest" }.configureEach {
+    outputs.upToDateWhen { false }
+}
+
+tasks.register("verifyAndroidDeviceTestResults") {
+    group = "verification"
+    description = "Requires nonempty, passing Android device-test results."
+    dependsOn("connectedAndroidDeviceTest")
+    doLast {
+        AndroidDeviceTestVerifier.verify(layout.buildDirectory.dir("outputs/androidTest-results/connected").get().asFile)
+    }
+}
+
 tasks.register("hostTests") {
     group = "verification"
-    description = "Runs every enabled target's tests that this host can execute, plus Android host tests."
+    description = "Runs every enabled target's tests that this host can execute, plus Android host and connected-device tests."
     dependsOn(
         rootProject.tasks.named("kotlinUpgradeYarnLock"),
         rootProject.tasks.named("kotlinWasmUpgradeYarnLock"),
         "allTests",
         "testAndroidHostTest",
+        "verifyAndroidDeviceTestResults",
     )
 }
 
 tasks.register("test") {
     group = "verification"
-    description = "Runs tests for every enabled target this host can run, Android host tests, and the Swift Export smoke test."
+    description = "Runs tests for every enabled target this host can run, Android host and connected-device tests, and the Swift Export smoke test."
     dependsOn("hostTests")
     dependsOn("swiftExportSmokeTest")
 }

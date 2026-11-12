@@ -12,7 +12,7 @@
       "severity": "error",
       "title": "Missing or weaker explicit Swift 6 mode",
       "recipe": "SWIFT.md#swift-language-mode-qualification-and-enum-follow-up-preparation",
-      "action": "Apply verification/enforce_swift6.py to Package.swift configuration only; verify actual frontend flags for every module."
+      "action": "Review authored Swift 6 versus generated Swift 5 package policy first. For an authored package, invoke the standalone Swift6ManifestEnforcer with an explicit manifest and receipt; verify actual frontend flags."
     },
     "SWIFT003": {
       "severity": "error",
