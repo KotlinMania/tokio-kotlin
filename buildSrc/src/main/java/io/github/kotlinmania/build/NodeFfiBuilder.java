@@ -63,7 +63,7 @@ public final class NodeFfiBuilder {
     /// Paths are normalized during parsing; existence, real-path containment and runtime version
     /// checks happen later. A null compiler/header/version override selects the documented default.
     private record Options(Path project, Path addon, Path build, String node, String version,
-                           Path headers, String cc, String cxx, String linker, boolean offline) {}
+                           Path headers, String cc, String cxx, String linker, String configuration, boolean offline) {}
 
     /// Resolves target defaults and matching conditions in the supported binding settings.
     ///
@@ -280,7 +280,8 @@ public final class NodeFfiBuilder {
         if (List.of(arguments).contains("--help")) {
             System.out.println("NodeFfiBuilder --project-dir DIR --addon-dir DIR --build-dir DIR"
                     + " [--node EXECUTABLE] [--node-version VERSION] [--headers-dir DIR]"
-                    + " [--cc EXECUTABLE] [--cxx EXECUTABLE] [--linker EXECUTABLE] [--offline]");
+                    + " [--cc EXECUTABLE] [--cxx EXECUTABLE] [--linker EXECUTABLE]"
+                    + " [--configuration Debug|Release] [--debug] [--offline]");
             return 0;
         }
         Path temporary = null;
@@ -299,7 +300,9 @@ public final class NodeFfiBuilder {
                 throw new IllegalArgumentException("Build storage resolves outside the owning project");
             }
             temporary = Files.createTempDirectory(scratch, "compile-");
-            report = options.build().resolve("reports/node-ffi/" + addon.getFileName() + ".json");
+            String reportSuffix = "Debug".equals(options.configuration()) ? "-debug.json" : ".json";
+            report = options.build().resolve("reports/node-ffi/" + addon.getFileName() + reportSuffix);
+            receipt.put("configuration", options.configuration());
             Map<String, Object> runtime = object(Json.parse(execute(List.of(options.node(), "-p",
                     "JSON.stringify({version:process.versions.node,platform:process.platform,arch:process.arch,executable:process.execPath})"),
                     addon, temporary)), "Node runtime");
@@ -388,12 +391,13 @@ public final class NodeFfiBuilder {
             throws IOException, InterruptedException {
         boolean windows = platform.equals("win32");
         boolean mac = platform.equals("darwin");
+        boolean isDebug = "Debug".equals(options.configuration());
         String name = (String) target.get("target_name");
         String product = !windows && name.startsWith("lib") ? name.substring(3) : name;
         if (product.isEmpty()) {
             throw new IllegalArgumentException("Native target produces an empty output name: " + name);
         }
-        Path output = addon.resolve("build/Release/" + product + ".node");
+        Path output = addon.resolve("build/" + options.configuration() + "/" + product + ".node");
         Files.createDirectories(output.getParent());
         if (!output.getParent().toRealPath().startsWith(project)) {
             throw new IllegalArgumentException("Native output resolves outside the owning project");
@@ -408,7 +412,8 @@ public final class NodeFfiBuilder {
         }
         List<String> defines = new ArrayList<>(List.of("NODE_GYP_MODULE_NAME=" + name, "BUILDING_NODE_EXTENSION",
                 "USING_UV_SHARED=1", "USING_V8_SHARED=1", "V8_DEPRECATION_WARNINGS=1", "_LARGEFILE_SOURCE",
-                "_FILE_OFFSET_BITS=64", "__STDC_FORMAT_MACROS", "NDEBUG"));
+                "_FILE_OFFSET_BITS=64", "__STDC_FORMAT_MACROS", isDebug ? "DEBUG" : "NDEBUG"));
+        if (isDebug) defines.add("_DEBUG");
         defines.addAll(option(target, "defines"));
         defines.removeAll(strings(target.getOrDefault("defines!", List.of()), "defines!"));
         String toolset = String.valueOf(target.getOrDefault("msbuild_toolset", ""));
@@ -418,9 +423,68 @@ public final class NodeFfiBuilder {
         String cc = options.cc() != null ? options.cc() : environmentCompiler("CC", windows ? (toolset.isEmpty() ? "cl.exe" : "clang-cl.exe") : "cc");
         String cxx = options.cxx() != null ? options.cxx() : environmentCompiler("CXX", windows ? (toolset.isEmpty() ? "cl.exe" : "clang-cl.exe") : "c++");
         List<Path> objects = new ArrayList<>();
+        List<Path> resolvedSources = new ArrayList<>();
         for (String source : option(target, "sources")) {
-            Path input = resolveInput(addon, source).toRealPath();
-            if (!input.startsWith(project) || !Files.isRegularFile(input)) {
+            Path candidate = resolveInput(addon, source);
+            if (Files.isRegularFile(candidate) && !source.endsWith("_bindings.cpp")) {
+                resolvedSources.add(candidate.toRealPath());
+            } else {
+                Path parentDir = candidate.getParent();
+                if (parentDir != null && Files.isDirectory(parentDir)) {
+                    try (java.util.stream.Stream<Path> stream = Files.list(parentDir)) {
+                        stream.filter(p -> Files.isRegularFile(p) && p.getFileName().toString().endsWith("_bindings.cpp"))
+                              .sorted(Comparator.comparing(p -> p.getFileName().toString()))
+                              .forEach(p -> {
+                                  try {
+                                      resolvedSources.add(p.toRealPath());
+                                  } catch (IOException e) {
+                                      throw new IllegalStateException(e);
+                                  }
+                              });
+                    }
+                }
+                if (resolvedSources.isEmpty() && Files.isRegularFile(candidate)) {
+                    resolvedSources.add(candidate.toRealPath());
+                }
+            }
+        }
+        boolean usesRegistrarHead = false;
+        boolean definesAddonEntry = false;
+        for (Path input : resolvedSources) {
+            String text = Files.readString(input, StandardCharsets.UTF_8);
+            if (text.contains("km_napi_registrar_head")) {
+                usesRegistrarHead = true;
+            }
+            if (text.contains("NAPI_MODULE(") || (text.contains("NODE_API_MODULE(") && !text.contains("#ifdef KM_NAPI_STANDALONE_MODULE"))) {
+                definesAddonEntry = true;
+            }
+        }
+        if (usesRegistrarHead && !definesAddonEntry) {
+            Path syntheticEntry = temporary.resolve("km_napi_entry.cpp");
+            Files.writeString(syntheticEntry,
+                "#include <napi.h>\n" +
+                "struct KmNapiRegistrarNode {\n" +
+                "    void (*register_fn)(Napi::Env, Napi::Object);\n" +
+                "    KmNapiRegistrarNode* next;\n" +
+                "};\n" +
+                "#if defined(__GNUC__) || defined(__clang__)\n" +
+                "__attribute__((visibility(\"hidden\")))\n" +
+                "#endif\n" +
+                "KmNapiRegistrarNode* km_napi_registrar_head = nullptr;\n" +
+                "static Napi::Object KmNapiInitAll(Napi::Env env, Napi::Object exports) {\n" +
+                "    for (KmNapiRegistrarNode* cur = km_napi_registrar_head; cur != nullptr; cur = cur->next) {\n" +
+                "        cur->register_fn(env, exports);\n" +
+                "    }\n" +
+                "    return exports;\n" +
+                "}\n" +
+                "NODE_API_MODULE(NODE_GYP_MODULE_NAME, KmNapiInitAll)\n",
+                StandardCharsets.UTF_8
+            );
+            resolvedSources.add(syntheticEntry.toRealPath());
+        }
+        for (Path input : resolvedSources) {
+            String source = input.getFileName().toString();
+            if ((!input.startsWith(project) && !input.startsWith(temporary.toRealPath())) || !Files.isRegularFile(input)) {
                 throw new IllegalArgumentException("Native source must be a file inside the owning project: " + input);
             }
             boolean cpp = source.endsWith(".cc") || source.endsWith(".cpp") || source.endsWith(".cxx");
@@ -430,7 +494,8 @@ public final class NodeFfiBuilder {
             Path object = temporary.resolve(name + "-" + objects.size() + (windows ? ".obj" : ".o"));
             List<String> command = new ArrayList<>(List.of(cpp ? cxx : cc));
             if (windows) {
-                command.addAll(List.of("/nologo", "/c", "/O2", "/MD", "/W3", cpp ? "/TP" : "/TC"));
+                command.addAll(List.of("/nologo", "/c", isDebug ? "/Od" : "/O2", "/MD", "/W3", cpp ? "/TP" : "/TC"));
+                if (isDebug) command.add("/Z7");
                 if (cpp) {
                     command.add("/std:c++20");
                     String exceptions = "1";
@@ -446,8 +511,10 @@ public final class NodeFfiBuilder {
                 addWindowsFlags(command, option(target, cpp ? "cflags_cc" : "cflags_c"));
                 command.addAll(List.of(input.toString(), "/Fo" + object));
             } else {
-                List<String> flags = new ArrayList<>(List.of("-O3", "-fPIC", "-pthread"));
-                if (cpp) flags.addAll(List.of("-std=gnu++20", "-fno-rtti", "-fno-exceptions"));
+                List<String> flags = new ArrayList<>(isDebug
+                        ? List.of("-O0", "-g", "-fPIC", "-fvisibility=hidden", "-pthread")
+                        : List.of("-O3", "-fPIC", "-fvisibility=hidden", "-pthread"));
+                if (cpp) flags.addAll(List.of("-std=gnu++20", "-fvisibility-inlines-hidden", "-fno-rtti", "-fno-exceptions"));
                 flags.addAll(option(target, "cflags"));
                 flags.addAll(option(target, cpp ? "cflags_cc" : "cflags_c"));
                 flags.removeAll(strings(target.getOrDefault("cflags!", List.of()), "cflags!"));
@@ -468,6 +535,7 @@ public final class NodeFfiBuilder {
         if (windows) {
             link.add(options.linker() == null ? (toolset.isEmpty() ? "link.exe" : "lld-link.exe") : options.linker());
             link.addAll(List.of("/NOLOGO", "/DLL", "/MACHINE:" + (arch.equals("arm64") ? "ARM64" : "X64"), "/OUT:" + output));
+            if (isDebug) link.add("/DEBUG");
             objects.forEach(object -> link.add(object.toString()));
             link.add(nodeLibrary.toString());
             link.addAll(List.of("kernel32.lib", "user32.lib", "gdi32.lib", "winspool.lib", "comdlg32.lib", "advapi32.lib",
@@ -476,6 +544,9 @@ public final class NodeFfiBuilder {
             link.add(options.linker() == null ? cxx : options.linker());
             link.addAll(mac ? List.of("-bundle", "-undefined", "dynamic_lookup", "-arch", arch.equals("arm64") ? "arm64" : "x86_64")
                     : List.of("-shared", "-pthread"));
+            if (!isDebug) {
+                link.add(mac ? "-Wl,-x" : "-Wl,--strip-debug");
+            }
             if (mac) addMacFlags(link, xcode, true, true);
             objects.forEach(object -> link.add(object.toString()));
             link.addAll(List.of("-o", output.toString()));
@@ -849,12 +920,17 @@ public final class NodeFfiBuilder {
     /// command lines. Later stages check path ownership and installed tool versions.
     private static Options parse(String[] arguments) {
         Map<String, String> values = new LinkedHashMap<>();
-        Set<String> allowed = Set.of("--project-dir", "--addon-dir", "--build-dir", "--node", "--node-version", "--headers-dir", "--cc", "--cxx", "--linker");
+        Set<String> allowed = Set.of("--project-dir", "--addon-dir", "--build-dir", "--node", "--node-version", "--headers-dir", "--cc", "--cxx", "--linker", "--configuration");
         boolean offline = false;
+        boolean debugFlag = false;
         for (int index = 0; index < arguments.length; index++) {
             String argument = arguments[index];
             if (argument.equals("--offline")) {
                 offline = true;
+                continue;
+            }
+            if (argument.equals("--debug")) {
+                debugFlag = true;
                 continue;
             }
             if (!allowed.contains(argument) || index + 1 == arguments.length || values.put(argument, arguments[++index]) != null) {
@@ -864,11 +940,17 @@ public final class NodeFfiBuilder {
         for (String required : List.of("--project-dir", "--addon-dir", "--build-dir")) {
             if (!values.containsKey(required)) throw new IllegalArgumentException("Missing " + required);
         }
+        String rawConfig = values.getOrDefault("--configuration", debugFlag ? "Debug" : "Release");
+        String configuration = switch (rawConfig.toLowerCase(Locale.ROOT)) {
+            case "debug" -> "Debug";
+            case "release" -> "Release";
+            default -> throw new IllegalArgumentException("Unsupported N-API configuration: " + rawConfig);
+        };
         Path project = Path.of(values.get("--project-dir")).toAbsolutePath().normalize();
         return new Options(project, Path.of(values.get("--addon-dir")).toAbsolutePath().normalize(),
                 Path.of(values.get("--build-dir")).toAbsolutePath().normalize(), values.getOrDefault("--node", "node"),
                 values.get("--node-version"), values.containsKey("--headers-dir") ? Path.of(values.get("--headers-dir")).toAbsolutePath().normalize() : null,
-                values.get("--cc"), values.get("--cxx"), values.get("--linker"), offline);
+                values.get("--cc"), values.get("--cxx"), values.get("--linker"), configuration, offline);
     }
 
     private static String exactVersion(String version) {

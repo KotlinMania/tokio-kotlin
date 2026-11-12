@@ -5,14 +5,18 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import javax.inject.Inject;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.process.ExecOperations;
+import org.w3c.dom.Element;
 
 /**
  * Shared verification and Wasm/WASI test fixture helpers for KotlinMania KMP library modules.
@@ -110,6 +114,50 @@ public final class VerificationSupport {
             Files.writeString(scriptFile.toPath(), script, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new GradleException("Failed to write macro-layout.js", e);
+        }
+    }
+
+    public static void verifyJunitXmlReports(String taskPath, Set<File> reports) {
+        if (reports.isEmpty()) {
+            throw new GradleException("Missing runtime reports for " + taskPath);
+        }
+        int tests = 0;
+        try {
+            var factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            var builder = factory.newDocumentBuilder();
+            for (File report : reports) {
+                Element suite = builder.parse(report).getDocumentElement();
+                int count = Integer.parseInt(suite.getAttribute("tests"));
+                if (suite.getElementsByTagName("testcase").getLength() != count) {
+                    throw new GradleException(
+                            taskPath + ": test count does not match the recorded cases in " + report.getName());
+                }
+                tests += count;
+                for (String attr : Arrays.asList("failures", "errors", "skipped")) {
+                    String val = suite.getAttribute(attr);
+                    int n = (val == null || val.isEmpty()) ? 0 : Integer.parseInt(val);
+                    if (n != 0) {
+                        throw new GradleException(taskPath + ": " + attr + " in " + report.getName());
+                    }
+                }
+                for (String elem : Arrays.asList("failure", "error", "skipped")) {
+                    if (suite.getElementsByTagName(elem).getLength() != 0) {
+                        throw new GradleException(taskPath + ": " + elem + " result in " + report.getName());
+                    }
+                }
+            }
+        } catch (GradleException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GradleException("Failed to parse JUnit XML reports for " + taskPath, e);
+        }
+        if (tests <= 0) {
+            throw new GradleException("Required runtime ran no tests: " + taskPath);
         }
     }
 
