@@ -215,4 +215,51 @@ struct TokioExportTests {
         #expect(reader.pollRead(cx: cx, buf: output).isReady)
         #expect(output.filledMut().isEmpty())
     }
+
+    @Test("Chain, Take, Copy, and CopyBuf transfer bounded streams through Swift Export")
+    func chainTakeCopyAndCopyBufWorkEndToEnd() {
+        let firstInput = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 2)
+        let firstBytes = firstInput.initializeUnfilled()
+        firstBytes[0] = 10
+        firstBytes[1] = 20
+        firstInput.advance(n: 2)
+
+        let secondInput = Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 3)
+        let secondBytes = secondInput.initializeUnfilled()
+        secondBytes[0] = 30
+        secondBytes[1] = 40
+        secondBytes[2] = 50
+        secondInput.advance(n: 3)
+
+        let chained = Tokio.io.util.chain(
+            first: Tokio.io.ByteSliceAsyncRead(bytes: firstInput.filled()),
+            second: Tokio.io.ByteSliceAsyncRead(bytes: secondInput.filled())
+        )
+        let limited = Tokio.io.util.take(inner: chained, limit: 4)
+        #expect(limited.limit() == 4)
+
+        let cx = Tokio.io.Context(wakeup: {})
+        let sink = Tokio.io.VecAsyncWrite(initialBytes: Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 0).filled())
+        let copyOp = Tokio.io.util.copy(reader: limited, writer: sink)
+        #expect(copyOp.poll(cx: cx).isReady)
+        #expect(limited.limit() == 0)
+
+        let copied = Tokio.io.ReadBuf.Companion.shared.new(buffer: sink.asSlice()).initializedMut()
+        #expect(copied.size == 4)
+        #expect(copied[0] == 10)
+        #expect(copied[1] == 20)
+        #expect(copied[2] == 30)
+        #expect(copied[3] == 40)
+
+        let bufSource = Tokio.io.ByteSliceAsyncBufRead(bytes: secondInput.filled())
+        let bufSink = Tokio.io.VecAsyncWrite(initialBytes: Tokio.io.ReadBuf.Companion.shared.uninit(capacity: 0).filled())
+        let copyBufOp = Tokio.io.util.copyBuf(reader: bufSource, writer: bufSink)
+        #expect(copyBufOp.poll(cx: cx).isReady)
+
+        let bufCopied = Tokio.io.ReadBuf.Companion.shared.new(buffer: bufSink.asSlice()).initializedMut()
+        #expect(bufCopied.size == 3)
+        #expect(bufCopied[0] == 30)
+        #expect(bufCopied[1] == 40)
+        #expect(bufCopied[2] == 50)
+    }
 }

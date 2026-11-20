@@ -9,7 +9,10 @@ import kotlin.random.Random
  * In order to make certain functions within a runtime deterministic, a seed
  * can be specified at the time of creation.
  */
-public class RngSeed(public val s: UInt, public val r: UInt) {
+public class RngSeed(
+    public val s: UInt,
+    public val r: UInt,
+) {
     override fun equals(other: Any?): Boolean = other is RngSeed && s == other.s && r == other.r
 
     override fun hashCode(): Int = 31 * s.hashCode() + r.hashCode()
@@ -20,9 +23,7 @@ public class RngSeed(public val s: UInt, public val r: UInt) {
         /**
          * Creates a random seed using loom internally.
          */
-        internal fun new(): RngSeed {
-            return RngSeed.fromU64(Random.nextLong().toULong())
-        }
+        internal fun new(): RngSeed = RngSeed.fromU64(Random.nextLong().toULong())
 
         public fun fromU64(seed: ULong): RngSeed {
             val one = (seed shr 32).toUInt()
@@ -36,9 +37,7 @@ public class RngSeed(public val s: UInt, public val r: UInt) {
 
         public fun random(): RngSeed = new()
 
-        public fun fromPair(s: UInt, r: UInt): RngSeed {
-            return RngSeed(s = s, r = r)
-        }
+        public fun fromPair(s: UInt, r: UInt): RngSeed = RngSeed(s = s, r = r)
     }
 }
 
@@ -51,7 +50,10 @@ public class RngSeed(public val s: UInt, public val r: UInt) {
  * This generator passes the SmallCrush suite, part of TestU01 framework:
  * <http://simul.iro.umontreal.ca/testu01/tu01.html>
  */
-public class FastRand(private var one: UInt, private var two: UInt) {
+public class FastRand(
+    private var one: UInt,
+    private var two: UInt,
+) {
     public constructor(seed: RngSeed) : this(seed.s, seed.r)
 
     public constructor() : this(RngSeed.random())
@@ -77,15 +79,11 @@ public class FastRand(private var one: UInt, private var two: UInt) {
         /**
          * Initialize a new fast random number generator using the default source of entropy.
          */
-        internal fun new(): FastRand {
-            return FastRand.fromSeed(RngSeed.new())
-        }
+        internal fun new(): FastRand = FastRand.fromSeed(RngSeed.new())
 
         /**
          * Initializes a new, thread-local, fast random number generator.
          */
-        internal fun fromSeed(seed: RngSeed): FastRand {
-            return FastRand(one = seed.s, two = seed.r)
-        }
+        internal fun fromSeed(seed: RngSeed): FastRand = FastRand(one = seed.s, two = seed.r)
     }
 }

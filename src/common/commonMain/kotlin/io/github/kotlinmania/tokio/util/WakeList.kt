@@ -13,10 +13,11 @@ private const val NUM_WAKERS: Int = 32
  *
  * The first `curr` elements of `inner` are initialized.
  */
-internal class WakeList private constructor(private val inner: Array<Waker?>, private var curr: Int) {
-    internal fun canPush(): Boolean {
-        return this.curr < NUM_WAKERS
-    }
+internal class WakeList private constructor(
+    private val inner: Array<Waker?>,
+    private var curr: Int,
+) {
+    internal fun canPush(): Boolean = this.curr < NUM_WAKERS
 
     internal fun push(value: Waker) {
         check(this.canPush())
@@ -52,8 +53,6 @@ internal class WakeList private constructor(private val inner: Array<Waker?>, pr
     }
 
     public companion object {
-        internal fun new(): WakeList {
-            return WakeList(inner = arrayOfNulls(NUM_WAKERS), curr = 0)
-        }
+        internal fun new(): WakeList = WakeList(inner = arrayOfNulls(NUM_WAKERS), curr = 0)
     }
 }
