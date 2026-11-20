@@ -4,31 +4,33 @@ Based on AST analysis, here are the concrete next steps.
 
 ## Summary
 
-- **Files Present:** 27/372 (7.3%)
-- **Function parity:** 164/3329 matched (target 280) — 4.9%
-- **Class/type parity:** 21/662 matched (target 43) — 3.2%
-- **Combined symbol parity:** 185/3991 matched (target 323) — 4.6%
-- **Average inline-code cosine:** 0.48 (function body across 27 matched files)
-- **Average documentation cosine:** 0.58 (doc text across 27 matched files)
+- **Files Present:** 32/372 (8.6%)
+- **Function parity:** 209/3370 matched (target 319) — 6.2%
+- **Class/type parity:** 24/662 matched (target 49) — 3.6%
+- **Combined symbol parity:** 233/4032 matched (target 368) — 5.8%
+- **Average inline-code cosine:** 0.17 (function body across 32 matched files)
+- **Average documentation cosine:** 0.61 (doc text across 32 matched files)
 - **Cheat-zeroed Files:** 0
-- **Critical Issues:** 21 files with <0.60 function similarity
+- **Critical Issues:** 31 files with <0.60 function similarity
+- **Needs Review:** 0 files with 0.60-0.84 function similarity
+- **Excellent:** 1 files with >=0.85 function similarity
 
 ## Priority 1: Fix Incomplete High-Dependency Files
 
 ### 1. metrics.io
-- **Similarity:** 0.81 (needs 4% improvement)
+- **Similarity:** 0.36 (needs 49% improvement)
 - **Dependencies:** 85
-- **Priority Score:** 85000400.0
+- **Priority Score:** 85000408.0
 - **Functions:** 3/3 matched
 - **Missing functions:** _none_
 - **Types:** 1/1 matched
 - **Missing types:** _none_
-- **Action:** Minor refinements needed
+- **Action:** Deep review - likely missing major functionality
 
 ### 2. std.unsafe_cell
-- **Similarity:** 0.44 (needs 41% improvement)
+- **Similarity:** 0.27 (needs 58% improvement)
 - **Dependencies:** 25
-- **Priority Score:** 25000406.0
+- **Priority Score:** 25000408.0
 - **Functions:** 3/3 matched (target 5)
 - **Missing functions:** _none_
 - **Types:** 1/1 matched
@@ -36,9 +38,9 @@ Based on AST analysis, here are the concrete next steps.
 - **Action:** Deep review - likely missing major functionality
 
 ### 3. std.atomic_usize
-- **Similarity:** 0.45 (needs 40% improvement)
+- **Similarity:** 0.07 (needs 78% improvement)
 - **Dependencies:** 17
-- **Priority Score:** 17000806.0
+- **Priority Score:** 17000810.0
 - **Functions:** 6/6 matched (target 18)
 - **Missing functions:** _none_
 - **Types:** 2/2 matched
@@ -46,34 +48,35 @@ Based on AST analysis, here are the concrete next steps.
 - **Action:** Deep review - likely missing major functionality
 
 ### 4. io.async_write
-- **Similarity:** 0.26 (needs 59% improvement)
+- **Similarity:** 0.06 (needs 79% improvement)
 - **Dependencies:** 14
-- **Priority Score:** 14000607.0
-- **Functions:** 5/5 matched (target 17)
-- **Missing functions:** _none_
+- **Priority Score:** 14203309.0
+- **Functions:** 12/32 matched (target 17)
+- **Missing functions:** `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`
 - **Types:** 1/1 matched (target 4)
 - **Missing types:** _none_
+- **Symbol Deficit:** 20 (functions: 20, types: 0)
 - **Action:** Deep review - likely missing major functionality
 
 ### 5. util.mem
-- **Similarity:** 0.73 (needs 12% improvement)
+- **Similarity:** 0.26 (needs 59% improvement)
 - **Dependencies:** 13
-- **Priority Score:** 13001703.0
-- **Functions:** 15/15 matched (target 26)
+- **Priority Score:** 13002007.0
+- **Functions:** 18/18 matched (target 26)
 - **Missing functions:** _none_
 - **Types:** 2/2 matched (target 3)
 - **Missing types:** _none_
-- **Action:** Review and complete missing sections
+- **Action:** Deep review - likely missing major functionality
 
 ### 6. metrics.scheduler
-- **Similarity:** 0.82 (needs 3% improvement)
+- **Similarity:** 0.41 (needs 44% improvement)
 - **Dependencies:** 11
-- **Priority Score:** 11000402.0
+- **Priority Score:** 11000406.0
 - **Functions:** 3/3 matched
 - **Missing functions:** _none_
 - **Types:** 1/1 matched
 - **Missing types:** _none_
-- **Action:** Minor refinements needed
+- **Action:** Deep review - likely missing major functionality
 
 ## Priority 2: Port Missing High-Value Files
 
@@ -106,9 +109,9 @@ Every matched file is listed below with function and type symbol parity.
 ### 1. metrics.io
 
 - **Target:** `metrics.Io`
-- **Similarity:** 0.81
+- **Similarity:** 0.36
 - **Dependents:** 85
-- **Priority Score:** 85000400.0
+- **Priority Score:** 85000408.0
 - **Functions:** 3/3 matched
 - **Missing functions:** _none_
 - **Types:** 1/1 matched
@@ -117,9 +120,9 @@ Every matched file is listed below with function and type symbol parity.
 ### 2. std.unsafe_cell
 
 - **Target:** `std.UnsafeCell`
-- **Similarity:** 0.44
+- **Similarity:** 0.27
 - **Dependents:** 25
-- **Priority Score:** 25000406.0
+- **Priority Score:** 25000408.0
 - **Functions:** 3/3 matched (target 5)
 - **Missing functions:** _none_
 - **Types:** 1/1 matched
@@ -128,9 +131,9 @@ Every matched file is listed below with function and type symbol parity.
 ### 3. std.atomic_usize
 
 - **Target:** `std.AtomicUsize`
-- **Similarity:** 0.45
+- **Similarity:** 0.07
 - **Dependents:** 17
-- **Priority Score:** 17000806.0
+- **Priority Score:** 17000810.0
 - **Functions:** 6/6 matched (target 18)
 - **Missing functions:** _none_
 - **Types:** 2/2 matched
@@ -140,21 +143,21 @@ Every matched file is listed below with function and type symbol parity.
 ### 4. io.async_write
 
 - **Target:** `io.AsyncWrite`
-- **Similarity:** 0.26
+- **Similarity:** 0.06
 - **Dependents:** 14
-- **Priority Score:** 14000607.0
-- **Functions:** 5/5 matched (target 17)
-- **Missing functions:** _none_
+- **Priority Score:** 14203309.0
+- **Functions:** 12/32 matched (target 17)
+- **Missing functions:** `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`
 - **Types:** 1/1 matched (target 4)
 - **Missing types:** _none_
 
 ### 5. util.mem
 
 - **Target:** `util.Mem`
-- **Similarity:** 0.73
+- **Similarity:** 0.26
 - **Dependents:** 13
-- **Priority Score:** 13001703.0
-- **Functions:** 15/15 matched (target 26)
+- **Priority Score:** 13002007.0
+- **Functions:** 18/18 matched (target 26)
 - **Missing functions:** _none_
 - **Types:** 2/2 matched (target 3)
 - **Missing types:** _none_
@@ -173,140 +176,151 @@ Every matched file is listed below with function and type symbol parity.
 ### 7. metrics.scheduler
 
 - **Target:** `metrics.Scheduler`
-- **Similarity:** 0.82
+- **Similarity:** 0.41
 - **Dependents:** 11
-- **Priority Score:** 11000402.0
+- **Priority Score:** 11000406.0
 - **Functions:** 3/3 matched
 - **Missing functions:** _none_
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 8. io.ready
+### 8. io.async_buf_read
+
+- **Target:** `io.AsyncBufRead`
+- **Similarity:** 0.06
+- **Dependents:** 7
+- **Priority Score:** 7020709.5
+- **Functions:** 4/6 matched (target 8)
+- **Missing functions:** `poll_fill_buf`, `consume`
+- **Types:** 1/1 matched (target 3)
+- **Missing types:** _none_
+
+### 9. io.ready
 
 - **Target:** `io.Ready`
-- **Similarity:** 0.77
+- **Similarity:** 0.26
 - **Dependents:** 7
-- **Priority Score:** 7012102.5
+- **Priority Score:** 7012107.5
 - **Functions:** 19/19 matched (target 29)
 - **Missing functions:** _none_
 - **Types:** 1/2 matched
 - **Missing types:** `Output`
 
-### 9. io.interest
+### 10. io.interest
 
 - **Target:** `io.Interest`
-- **Similarity:** 0.50
+- **Similarity:** 0.14
 - **Dependents:** 7
-- **Priority Score:** 7011605.0
+- **Priority Score:** 7011608.5
 - **Functions:** 14/14 matched (target 21)
 - **Missing functions:** _none_
 - **Types:** 1/2 matched
 - **Missing types:** `Output`
 
-### 10. io.async_buf_read
+### 11. util.wake_list
 
-- **Target:** `io.AsyncBufRead`
-- **Similarity:** 0.33
-- **Dependents:** 7
-- **Priority Score:** 7000306.5
-- **Functions:** 2/2 matched (target 8)
-- **Missing functions:** _none_
-- **Types:** 1/1 matched (target 3)
-- **Missing types:** _none_
+- **Target:** `util.WakeList`
+- **Similarity:** 0.13
+- **Dependents:** 6
+- **Priority Score:** 6020808.5
+- **Functions:** 5/6 matched (target 5)
+- **Missing functions:** `drop`
+- **Types:** 1/2 matched (target 1)
+- **Missing types:** `DropGuard`
 
-### 11. io.async_read
+### 12. io.async_read
 
 - **Target:** `io.AsyncRead`
-- **Similarity:** 0.40
+- **Similarity:** 0.11
 - **Dependents:** 5
-- **Priority Score:** 5000206.0
-- **Functions:** 1/1 matched (target 4)
-- **Missing functions:** _none_
+- **Priority Score:** 5010409.0
+- **Functions:** 2/3 matched (target 4)
+- **Missing functions:** `poll_read`
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 12. io.read_buf
+### 13. io.read_buf
 
 - **Target:** `io.ReadBuf`
-- **Similarity:** 0.48
+- **Similarity:** 0.12
 - **Dependents:** 4
-- **Priority Score:** 4032605.2
+- **Priority Score:** 4032608.8
 - **Functions:** 22/25 matched (target 32)
 - **Missing functions:** `slice_to_uninit_mut`, `slice_assume_init`, `slice_assume_init_mut`
 - **Types:** 1/1 matched (target 2)
 - **Missing types:** _none_
 
-### 13. util.sync_wrapper
+### 14. util.memchr
+
+- **Target:** `util.Memchr`
+- **Similarity:** 0.02
+- **Dependents:** 1
+- **Priority Score:** 1040509.8
+- **Functions:** 1/5 matched (target 1)
+- **Missing functions:** `memchr`, `memchr_test`, `memchr_all`, `memchr_empty`
+- **Types:** 0/0 matched
+- **Missing types:** _none_
+- **Tests:** 0/3 matched
+
+### 15. util.bit
+
+- **Target:** `util.Bit`
+- **Similarity:** 0.18
+- **Dependents:** 1
+- **Priority Score:** 1021008.2
+- **Functions:** 7/9 matched (target 11)
+- **Missing functions:** `fmt`, `unpack`
+- **Types:** 1/1 matched
+- **Missing types:** _none_
+
+### 16. util.sync_wrapper
 
 - **Target:** `util.SyncWrapper`
-- **Similarity:** 0.32
+- **Similarity:** 0.06
 - **Dependents:** 1
-- **Priority Score:** 1020406.8
+- **Priority Score:** 1020409.4
 - **Functions:** 1/3 matched (target 4)
 - **Missing functions:** `new`, `downcast_ref_sync`
 - **Types:** 1/1 matched
 - **Missing types:** _none_
 
-### 14. util.bit
-
-- **Target:** `util.Bit`
-- **Similarity:** 0.58
-- **Dependents:** 1
-- **Priority Score:** 1010904.2
-- **Functions:** 7/8 matched (target 11)
-- **Missing functions:** `fmt`
-- **Types:** 1/1 matched
-- **Missing types:** _none_
-
-### 15. util.memchr
-
-- **Target:** `util.Memchr`
-- **Similarity:** 0.38
-- **Dependents:** 1
-- **Priority Score:** 1000406.2
-- **Functions:** 4/4 matched
-- **Missing functions:** _none_
-- **Types:** 0/0 matched (target 1)
-- **Missing types:** _none_
-- **Tests:** 3/3 matched
-
-### 16. util.buf_reader
+### 17. util.buf_reader
 
 - **Target:** `util.BufReader`
-- **Similarity:** 0.40
+- **Similarity:** 0.08
 - **Dependents:** 0
-- **Priority Score:** 102106.0
+- **Priority Score:** 102109.2
 - **Functions:** 11/20 matched (target 11)
 - **Missing functions:** `start_seek`, `poll_complete`, `poll_write`, `poll_write_vectored`, `is_write_vectored`, `poll_flush`, `poll_shutdown`, `fmt`, `assert_unpin`
 - **Types:** 0/1 matched
 - **Missing types:** `SeekState`
 - **Tests:** 0/1 matched
 
-### 17. util.buf_writer
+### 18. util.buf_writer
 
 - **Target:** `util.BufWriter`
-- **Similarity:** 0.47
+- **Similarity:** 0.08
 - **Dependents:** 0
-- **Priority Score:** 82105.3
+- **Priority Score:** 82109.2
 - **Functions:** 13/20 matched (target 14)
 - **Missing functions:** `start_seek`, `poll_complete`, `poll_read`, `poll_fill_buf`, `consume`, `fmt`, `assert_unpin`
 - **Types:** 0/1 matched
 - **Missing types:** `SeekState`
 - **Tests:** 0/1 matched
 
-### 18. util.empty
+### 19. util.empty
 
 - **Target:** `util.Empty`
-- **Similarity:** 0.38
+- **Similarity:** 0.07
 - **Dependents:** 0
-- **Priority Score:** 61206.2
+- **Priority Score:** 61209.3
 - **Functions:** 6/12 matched (target 8)
 - **Missing functions:** `poll_fill_buf`, `consume`, `start_seek`, `poll_complete`, `fmt`, `assert_unpin`
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 19. util.cacheline
+### 20. util.cacheline
 
 - **Target:** `util.Cacheline`
 - **Similarity:** 0.00
@@ -317,91 +331,138 @@ Every matched file is listed below with function and type symbol parity.
 - **Types:** 1/2 matched (target 1)
 - **Missing types:** `Target`
 
-### 20. util.rand
+### 21. util.copy
 
-- **Target:** `util.Rand`
-- **Similarity:** 0.35
+- **Target:** `util.Copy`
+- **Similarity:** 0.10
 - **Dependents:** 0
-- **Priority Score:** 30806.5
-- **Functions:** 3/6 matched (target 7)
-- **Missing functions:** `new`, `from_pair`, `from_seed`
-- **Types:** 2/2 matched
-- **Missing types:** _none_
+- **Priority Score:** 20809.0
+- **Functions:** 4/5 matched (target 7)
+- **Missing functions:** `new`
+- **Types:** 2/3 matched (target 2)
+- **Missing types:** `Output`
 
-### 21. io.stdout
-
-- **Target:** `io.Stdout`
-- **Similarity:** 0.39
-- **Dependents:** 0
-- **Priority Score:** 20506.1
-- **Functions:** 3/5 matched (target 7)
-- **Missing functions:** `as_raw_fd`, `as_fd`
-- **Types:** 0/0 matched (target 1)
-- **Missing types:** _none_
-
-### 22. io.stderr
-
-- **Target:** `io.Stderr`
-- **Similarity:** 0.39
-- **Dependents:** 0
-- **Priority Score:** 20506.1
-- **Functions:** 3/5 matched (target 7)
-- **Missing functions:** `as_raw_fd`, `as_fd`
-- **Types:** 0/0 matched (target 1)
-- **Missing types:** _none_
-
-### 23. util.sink
+### 22. util.sink
 
 - **Target:** `util.Sink`
-- **Similarity:** 0.47
+- **Similarity:** 0.08
 - **Dependents:** 0
-- **Priority Score:** 20505.3
+- **Priority Score:** 20509.2
 - **Functions:** 3/5 matched (target 7)
 - **Missing functions:** `fmt`, `assert_unpin`
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 24. io.stdin
+### 23. io.stdout
+
+- **Target:** `io.Stdout`
+- **Similarity:** 0.13
+- **Dependents:** 0
+- **Priority Score:** 20508.7
+- **Functions:** 3/5 matched (target 7)
+- **Missing functions:** `as_raw_fd`, `as_fd`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+
+### 24. io.stderr
+
+- **Target:** `io.Stderr`
+- **Similarity:** 0.13
+- **Dependents:** 0
+- **Priority Score:** 20508.7
+- **Functions:** 3/5 matched (target 7)
+- **Missing functions:** `as_raw_fd`, `as_fd`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+
+### 25. util.copy_buf
+
+- **Target:** `util.CopyBuf`
+- **Similarity:** 0.05
+- **Dependents:** 0
+- **Priority Score:** 20309.5
+- **Functions:** 1/2 matched (target 4)
+- **Missing functions:** `assert_unpin`
+- **Types:** 0/1 matched
+- **Missing types:** `Output`
+- **Tests:** 0/1 matched
+
+### 26. io.stdin
 
 - **Target:** `io.Stdin`
-- **Similarity:** 0.24
+- **Similarity:** 0.10
 - **Dependents:** 0
-- **Priority Score:** 20307.6
+- **Priority Score:** 20309.0
 - **Functions:** 1/3 matched
 - **Missing functions:** `as_raw_fd`, `as_fd`
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
 
-### 25. util.repeat
+### 27. util.take
+
+- **Target:** `util.Take`
+- **Similarity:** 0.14
+- **Dependents:** 0
+- **Priority Score:** 11108.6
+- **Functions:** 10/11 matched (target 12)
+- **Missing functions:** `assert_unpin`
+- **Types:** 0/0 matched (target 1)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 28. util.chain
+
+- **Target:** `util.Chain`
+- **Similarity:** 0.16
+- **Dependents:** 0
+- **Priority Score:** 11008.4
+- **Functions:** 9/10 matched
+- **Missing functions:** `assert_unpin`
+- **Types:** 0/0 matched (target 2)
+- **Missing types:** _none_
+- **Tests:** 0/1 matched
+
+### 29. util.repeat
 
 - **Target:** `util.Repeat`
-- **Similarity:** 0.32
+- **Similarity:** 0.05
 - **Dependents:** 0
-- **Priority Score:** 10206.8
+- **Priority Score:** 10209.5
 - **Functions:** 1/2 matched (target 4)
 - **Missing functions:** `assert_unpin`
 - **Types:** 0/0 matched (target 1)
 - **Missing types:** _none_
 - **Tests:** 0/1 matched
 
-### 26. io.split
+### 30. io.split
 
 - **Target:** `io.Split`
-- **Similarity:** 0.71
+- **Similarity:** 0.28
 - **Dependents:** 0
-- **Priority Score:** 1102.9
-- **Functions:** 10/10 matched (target 15)
+- **Priority Score:** 1307.2
+- **Functions:** 12/12 matched (target 15)
 - **Missing functions:** _none_
 - **Types:** 1/1 matched (target 3)
 - **Missing types:** _none_
 
-### 27. util.metric_atomics
+### 31. util.rand
+
+- **Target:** `util.Rand`
+- **Similarity:** 0.47
+- **Dependents:** 0
+- **Priority Score:** 905.3
+- **Functions:** 7/7 matched (target 11)
+- **Missing functions:** _none_
+- **Types:** 2/2 matched
+- **Missing types:** _none_
+
+### 32. util.metric_atomics
 
 - **Target:** `util.MetricAtomics`
-- **Similarity:** 0.58
+- **Similarity:** 0.12
 - **Dependents:** 0
-- **Priority Score:** 704.2
+- **Priority Score:** 708.8
 - **Functions:** 5/5 matched (target 9)
 - **Missing functions:** _none_
 - **Types:** 2/2 matched

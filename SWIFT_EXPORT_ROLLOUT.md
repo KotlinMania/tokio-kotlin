@@ -1,5 +1,8 @@
 # Swift Export Rollout — Recipe for the Claude GitHub Agent
 
+> Historical rollout reference. Current build requirements and verification
+> commands are in `AGENTS.md`, `SWIFT.md`, and `FIX_SWIFT.md`.
+
 > **Self-contained instruction set.** This file lives at the root of every
 > repository that has the canonical KotlinMania Swift Export rollout
 > committed to its `automation/swift-export-rollout` branch. The Claude
@@ -42,30 +45,12 @@ proven end-to-end with a working `swift test` invocation against the
 
 ### The five changes
 
-1. **`build.gradle.kts`** — **both** iOS Simulator framework binaries
-   (`iosSimulatorArm64` *and* `iosX64`) now have `isStatic = true`.
-   The Swift Export SPM bridge expects a static framework for the iOS
-   Simulator so that the SPM linker can pull in the symbol
-   implementations directly. Both simulator slices must match — if
-   `iosSimulatorArm64` is static and `iosX64` is left dynamic, the
-   `assembleDebugIosSimulatorFatFrameworkFor<Name>XCFramework` task
-   fails with:
-
-   ```
-   Cannot create a fat framework from:
-     <Name> - arm64 - static
-     <Name> - x64 - dynamic
-     All input frameworks must be either static or dynamic
-   ```
-
-   The other Apple targets (`iosArm64`, `tvosArm64`,
-   `tvosSimulatorArm64`, `watchos*`, `macosArm64`) stay dynamic.
-
-   > **Note**: earlier versions of this recipe and of `apply.sh` flipped
-   > only `iosSimulatorArm64`. Repos that landed the rollout before this
-   > correction need a follow-up commit adding `isStatic = true` to
-   > `iosX64`. http-kotlin's `build.gradle.kts:218-231` is the working
-   > reference shape.
+1. **`build.gradle.kts`** — the retained iOS device and simulator framework
+   binaries (`iosArm64` and `iosSimulatorArm64`) use `isStatic = true`,
+   matching the current template. Swift Export consumes their static symbols.
+   Apple x64 targets are retired under `AGENTS.md`; do not add an Intel
+   simulator declaration or task. The other retained Apple frameworks keep
+   the template's linkage settings.
 
 2. **`.github/workflows/swift.yml`** — a new platform workflow with a
    `workflow_call:` trigger, matching the shape of the existing
@@ -75,7 +60,7 @@ proven end-to-end with a working `swift test` invocation against the
        as input. The list includes `BUILT_PRODUCTS_DIR`,
        `TARGET_BUILD_DIR`, `SDK_NAME=macosx`, `CONFIGURATION=Debug`,
        `ARCHS=arm64`, `FRAMEWORKS_FOLDER_PATH=Frameworks`,
-       `MACOSX_DEPLOYMENT_TARGET=14.0`, and crucially
+       `MACOSX_DEPLOYMENT_TARGET=15.0`, and crucially
        `DEPLOYMENT_TARGET_SETTING_NAME=MACOSX_DEPLOYMENT_TARGET` —
        which Xcode normally injects per-target but the Kotlin plugin
        has no default for. Without it,
@@ -88,7 +73,7 @@ proven end-to-end with a working `swift test` invocation against the
        generated from the upstream Kotlin source, plus four
        `.swiftmodule/` bundles named `<Module>`, `KotlinRuntimeSupport`,
        `ExportedKotlinPackages`, and `KotlinRuntime`.
-     - Changes directory into `swift-test-harness/` and runs
+     - Changes directory into `src/swift/swift-test-harness/` and runs
        `swift test`, which compiles and runs the smoke test against
        the just-produced Swift module.
      - Uploads the static archive, swiftmodule bundles, and the full
@@ -101,7 +86,7 @@ proven end-to-end with a working `swift test` invocation against the
    the same `permissions: contents: read` ceiling. This makes the
    `swift.yml` workflow run as part of the regular CI orchestration.
 
-4. **`swift-test-harness/`** — a new top-level directory containing:
+4. **`src/swift/swift-test-harness/`** — a new top-level directory containing:
      - `Package.swift` — a Swift Package Manager package depending on
        the Kotlin-generated SPM at
        `../build/SPMPackage/macosArm64/Debug` with one `testTarget`
@@ -193,9 +178,9 @@ Must list at minimum:
 - `build.gradle.kts` modified (1 insertion if multi-line iosSimulatorArm64 form, 4 insertions and 1 deletion if single-line form)
 - `.github/workflows/swift.yml` new
 - `.github/workflows/ci.yml` modified (4-line addition)
-- `swift-test-harness/Package.swift` new
-- `swift-test-harness/.gitignore` new
-- `swift-test-harness/Tests/SwiftTestHarnessTests/<Module>ExportTests.swift` new
+- `src/swift/swift-test-harness/Package.swift` new
+- `src/swift/swift-test-harness/.gitignore` new
+- `src/swift/swift-test-harness/Tests/SwiftTestHarnessTests/<Module>ExportTests.swift` new
 - `.gitignore` modified
 
 It may also include this `SWIFT_EXPORT_ROLLOUT.md` file at the repo
@@ -333,11 +318,11 @@ ran before opening this PR — is checked in at the repo root as
 - `.github/workflows/swift.yml` (new) — `workflow_call:` platform
   workflow that sets the full Xcode-style environment, runs
   `./gradlew embedSwiftExportForXcode`, then runs `swift test` from
-  `swift-test-harness/`. Uploads the static archive and `.swiftmodule`
+  `src/swift/swift-test-harness/`. Uploads the static archive and `.swiftmodule`
   bundles as artifacts on success-or-failure.
 - `.github/workflows/ci.yml` — adds the `swift:` job alongside
   `wasm:` and `js:`.
-- `swift-test-harness/` (new) — a Swift Package Manager package with
+- `src/swift/swift-test-harness/` (new) — a Swift Package Manager package with
   one smoke test that asserts the Swift module imports cleanly.
 - `.gitignore` — Swift/SPM workspace state section.
 
@@ -359,7 +344,7 @@ at once:
 1. **`Package.swift` doesn't reference its own static archive.** The
    Kotlin plugin emits Swift source files for the SPM package but
    does not declare `lib<Module>.a` as a binary target or expose its
-   link path. `swift-test-harness/Package.swift` compensates with
+   link path. `src/swift/swift-test-harness/Package.swift` compensates with
    `unsafeFlags(["-L", "../build/swift-test", "-l<Module>"])`.
 2. **`BuildSPMSwiftExportPackage` validates
    `deploymentTargetSettingName` as a non-optional input** but
@@ -409,7 +394,7 @@ Then stop. A human will pick it up.
 ## Known upstream gaps
 
 1. **Kotlin-plugin-generated `Package.swift` doesn't reference its
-   static archive.** Workaround in `swift-test-harness/Package.swift`:
+   static archive.** Workaround in `src/swift/swift-test-harness/Package.swift`:
    `unsafeFlags(["-L", "../build/swift-test", "-l<Module>"])`.
 
 2. **`BuildSPMSwiftExportPackage.deploymentTargetSettingName` has no
@@ -476,7 +461,7 @@ Then stop. A human will pick it up.
 
 5. **Swift accesses Kotlin companion objects as `Type.Companion.shared.member`**,
    not `Type.companion.member`. Common gotcha when writing the smoke
-   test in `swift-test-harness/`. The Swift binding generated by the
+   test in `src/swift/swift-test-harness/`. The Swift binding generated by the
    plugin uses a capital `Companion` struct type with a `shared`
    singleton accessor, not a lowercase `companion` property.
 
@@ -1133,11 +1118,11 @@ signatures:
 
 ```sh
 grep -nE "^(public |internal |private )?(class |object |val |var |fun )[^=]*: \\(.*\\) -> " \
-    src/commonMain/kotlin/**/*.kt
+    src/common/commonMain/kotlin/**/*.kt
 grep -nE "^(public |internal |private )?(class |object |val |var |fun )[^=]*\\(.* \\(.*\\) -> " \
-    src/commonMain/kotlin/**/*.kt
+    src/common/commonMain/kotlin/**/*.kt
 grep -rnE "^typealias [A-Z][A-Za-z0-9_]+ = \\(.*\\) -> " \
-    src/commonMain/kotlin/
+    src/common/commonMain/kotlin/
 ```
 
 If all three passes return no results, trigger 8b doesn't apply and

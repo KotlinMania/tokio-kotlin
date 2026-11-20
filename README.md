@@ -287,11 +287,14 @@ terms or conditions.
 
 ```kotlin
 dependencies {
-    implementation("io.github.kotlinmania:tokio-kotlin:0.1.1")
+    implementation("io.github.kotlinmania:tokio-kotlin:0.1.2")
 }
 ```
 
 ### Building
+
+Swift Export and its test harness require macOS 15 or newer. The Swift
+workflow uses the current template’s macOS 26 runner for its Xcode SDK.
 
 ```bash
 ./gradlew build

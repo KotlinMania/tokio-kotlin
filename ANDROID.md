@@ -244,7 +244,7 @@ The `androidMain` source set's actuals are different in shape:
 - The actual is `external fun jniSymbolName(...)` declared on a Kotlin class
   marked `@JvmStatic`, with `System.loadLibrary("libc_kotlin_pthread")` (or
   the right shared library name).
-- The shared library is a C/C++ file under `src/androidMain/jni/` that calls
+- The shared library is a C/C++ file under `src/android/jvm/androidMain/jni/` that calls
   into bionic, with a `JNI_OnLoad` and a JNIEXPORT-tagged C entry point per
   exported Kotlin symbol.
 - The Android Gradle plugin's `externalNativeBuild { ndkBuild { ... } }` or
@@ -326,7 +326,6 @@ The full pattern (not just the task name):
 ### Workflow integration
 Every workflow command that touches Android must invoke `setupAndroidSdk` first:
 - `android.yml`: before `compileAndroidMain`, `assembleUnitTest`, `assembleAndroidTest`.
-- `codeql.yml`: before `compileAndroidMain`, `compileKotlinJs`, `compileKotlinWasmJs`.
 - `publish.yml`: before the dry-run `compileAndroidMain androidSourcesJar` and before `publishAndReleaseToMavenCentral`.
 - `windows.yml`: even for `mingwX64Test`, run `setupAndroidSdk` first — it's the Windows-runner proof that `setupAndroidSdk` is callable through Gradle alone. No WSL, no bash, no batch, no PowerShell duplicate installer.
 
@@ -343,11 +342,6 @@ rg -n "setupAndroidSdk|compileAndroidMain|assembleUnitTest|androidSourcesJar|ass
 ./gradlew test --no-daemon --console=plain --no-configuration-cache
 git diff --check
 ```
-
-### CodeQL `java-kotlin` extraction
-KMP repos with an `android` target use `compileAndroidMain` as the CodeQL extraction command (the Android target emits real `.class` files the LD_PRELOAD tracer can hook). `compileKotlinMetadata` extracts zero TRAP. The full pattern + the required `--rerun-tasks --no-build-cache -Pkotlin.compiler.execution.strategy=out-of-process --no-configuration-cache --no-daemon` flags must be preserved when porting workflow YAML.
-
-`codeqlAndroidAar` extraction must use the dedicated configuration pattern from `syn-kotlin`, not mix AARs into `codeqlSourceClasspath`. If no real published Android AAR dependency exists yet, do not add fake coordinates — note in the PR/run report that no published AAR dependency exists.
 
 ---
 
