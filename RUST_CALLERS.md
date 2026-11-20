@@ -16,15 +16,15 @@ For every Rust crate this repo owns (under `tmp/`), this file lists every **cros
 
 | package | module | inbound use sites | distinct caller crates | distinct caller repos | codex sites |
 |---|---|---:|---:|---:|---:|
-| `tokio` | `tokio` | 1550 | 95 | 33 | 857 |
+| `tokio` | `tokio` | 1740 | 105 | 42 | 857 |
 
 ## `tokio`
 
-### Inbound symbols (121 distinct, 1550 total `use` sites)
+### Inbound symbols (124 distinct, 1740 total `use` sites)
 
 Sorted by codex demand, then total demand. The first symbols are the priority queue for porting `tokio`.
 
-#### `tokio::time::timeout` — 145 site(s) (132 codex, 13 other, 24 caller crates)
+#### `tokio::time::timeout` — 152 site(s) (132 codex, 20 other, 27 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/sse/responses.rs:24` — `use tokio::time::timeout`
 - ✅ `codex-kotlin/codex-app-server` `src/command_exec.rs:686` — `use tokio::time::timeout`
@@ -38,9 +38,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server` `tests/suite/auth.rs:20` — `use tokio::time::timeout`
 - ✅ `codex-kotlin/codex-app-server` `tests/suite/conversation_summary.rs:19` — `use tokio::time::timeout`
 - ✅ `codex-kotlin/codex-app-server` `tests/suite/fuzzy_file_search.rs:12` — `use tokio::time::timeout`
-- _… and 133 more site(s)._
+- _… and 140 more site(s)._
 
-#### `tokio::sync::mpsc` — 105 site(s) (68 codex, 37 other, 35 caller crates)
+#### `tokio::sync::mpsc` — 107 site(s) (68 codex, 39 other, 36 caller crates)
 
 - ✅ `codex-kotlin/codex-analytics` `src/analytics_client_tests.rs:113` — `use tokio::sync::mpsc`
 - ✅ `codex-kotlin/codex-analytics` `src/client.rs:39` — `use tokio::sync::mpsc`
@@ -54,7 +54,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server` `src/command_exec.rs:33` — `use tokio::sync::mpsc`
 - ✅ `codex-kotlin/codex-app-server` `src/fs_watch.rs:26` — `use tokio::sync::mpsc`
 - ✅ `codex-kotlin/codex-app-server` `src/in_process.rs:91` — `use tokio::sync::mpsc`
-- _… and 93 more site(s)._
+- _… and 95 more site(s)._
 
 #### `tokio::sync::Mutex` — 83 site(s) (60 codex, 23 other, 28 caller crates)
 
@@ -88,7 +88,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server` `tests/suite/v2/marketplace_add.rs:11` — `use tokio::time::Duration`
 - _… and 59 more site(s)._
 
-#### `tokio::sync::oneshot` — 84 site(s) (52 codex, 32 other, 26 caller crates)
+#### `tokio::sync::oneshot` — 88 site(s) (52 codex, 36 other, 29 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/endpoint/realtime_websocket/methods.rs:33` — `use tokio::sync::oneshot`
 - ✅ `codex-kotlin/codex-api` `src/endpoint/responses_websocket.rs:29` — `use tokio::sync::oneshot`
@@ -102,9 +102,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server` `src/outgoing_message.rs:19` — `use tokio::sync::oneshot`
 - ✅ `codex-kotlin/codex-app-server` `src/request_processors.rs:404` — `use tokio::sync::oneshot`
 - ✅ `codex-kotlin/codex-app-server` `src/request_serialization.rs:154` — `use tokio::sync::oneshot`
-- _… and 72 more site(s)._
+- _… and 76 more site(s)._
 
-#### `tokio::io::AsyncWriteExt` — 61 site(s) (34 codex, 27 other, 25 caller crates)
+#### `tokio::io::AsyncWriteExt` — 75 site(s) (34 codex, 41 other, 30 caller crates)
 
 - ✅ `codex-kotlin/app_test_support` `mcp_process.rs:7` — `use tokio::io::AsyncWriteExt`
 - ✅ `codex-kotlin/codex-app-server` `tests/common/mcp_process.rs:7` — `use tokio::io::AsyncWriteExt`
@@ -118,7 +118,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `src/personality_migration_tests.rs:14` — `use tokio::io::AsyncWriteExt`
 - ✅ `codex-kotlin/codex-core` `src/session/tests.rs:735` — `use tokio::io::AsyncWriteExt as _`
 - ✅ `codex-kotlin/codex-core` `tests/common/streaming_sse.rs:7` — `use tokio::io::AsyncWriteExt`
-- _… and 49 more site(s)._
+- _… and 63 more site(s)._
 
 #### `tokio::sync::watch` — 37 site(s) (33 codex, 4 other, 12 caller crates)
 
@@ -136,7 +136,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `src/codex_delegate_tests.rs:32` — `use tokio::sync::watch`
 - _… and 25 more site(s)._
 
-#### `tokio::task::JoinHandle` — 42 site(s) (32 codex, 10 other, 16 caller crates)
+#### `tokio::task::JoinHandle` — 47 site(s) (32 codex, 15 other, 19 caller crates)
 
 - ✅ `codex-kotlin/codex-app-server` `src/lib.rs:61` — `use tokio::task::JoinHandle`
 - ✅ `codex-kotlin/codex-app-server` `tests/suite/v2/app_list.rs:56` — `use tokio::task::JoinHandle`
@@ -150,9 +150,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/stdio.rs:19` — `use tokio::task::JoinHandle`
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/unix_socket.rs:12` — `use tokio::task::JoinHandle`
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/websocket.rs:39` — `use tokio::task::JoinHandle`
-- _… and 30 more site(s)._
+- _… and 35 more site(s)._
 
-#### `tokio::time::Instant` — 44 site(s) (29 codex, 15 other, 14 caller crates)
+#### `tokio::time::Instant` — 51 site(s) (29 codex, 22 other, 16 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/endpoint/responses_websocket.rs:30` — `use tokio::time::Instant`
 - ✅ `codex-kotlin/codex-api` `src/files.rs:11` — `use tokio::time::Instant`
@@ -166,7 +166,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/remote_control/segment.rs:14` — `use tokio::time::Instant`
 - ✅ `codex-kotlin/codex-cloud-tasks` `src/lib.rs:874` — `use tokio::time::Instant as TokioInstant`
 - ✅ `codex-kotlin/codex-core` `src/file_watcher.rs:24` — `use tokio::time::Instant`
-- _… and 32 more site(s)._
+- _… and 39 more site(s)._
 
 #### `tokio::process::Command` — 30 site(s) (29 codex, 1 other, 18 caller crates)
 
@@ -184,7 +184,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `tests/suite/rmcp_client.rs:66` — `use tokio::process::Command`
 - _… and 18 more site(s)._
 
-#### `tokio::time::sleep` — 39 site(s) (27 codex, 12 other, 21 caller crates)
+#### `tokio::time::sleep` — 49 site(s) (27 codex, 22 other, 23 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/endpoint/realtime_websocket/methods.rs:34` — `use tokio::time::sleep`
 - ✅ `codex-kotlin/codex-app-server` `tests/suite/v2/command_exec.rs:32` — `use tokio::time::sleep`
@@ -198,9 +198,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `src/git_info_tests.rs:87` — `use tokio::time::sleep`
 - ✅ `codex-kotlin/codex-core` `src/session/tests.rs:153` — `use tokio::time::sleep`
 - ✅ `codex-kotlin/codex-core` `src/shell_snapshot_tests.rs:325` — `use tokio::time::sleep`
-- _… and 27 more site(s)._
+- _… and 37 more site(s)._
 
-#### `tokio::io::AsyncBufReadExt` — 29 site(s) (24 codex, 5 other, 15 caller crates)
+#### `tokio::io::AsyncBufReadExt` — 32 site(s) (24 codex, 8 other, 16 caller crates)
 
 - ✅ `codex-kotlin/app_test_support` `mcp_process.rs:6` — `use tokio::io::AsyncBufReadExt`
 - ✅ `codex-kotlin/codex-app-server` `tests/common/mcp_process.rs:6` — `use tokio::io::AsyncBufReadExt`
@@ -214,9 +214,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-exec-server` `src/connection.rs:10` — `use tokio::io::AsyncBufReadExt`
 - ✅ `codex-kotlin/codex-exec-server` `src/rpc.rs:520` — `use tokio::io::AsyncBufReadExt`
 - ✅ `codex-kotlin/codex-exec-server` `src/server/processor.rs:195` — `use tokio::io::AsyncBufReadExt`
-- _… and 17 more site(s)._
+- _… and 20 more site(s)._
 
-#### `tokio::net::TcpListener` — 46 site(s) (23 codex, 23 other, 17 caller crates)
+#### `tokio::net::TcpListener` — 51 site(s) (23 codex, 28 other, 21 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/endpoint/realtime_websocket/methods.rs:846` — `use tokio::net::TcpListener`
 - ✅ `codex-kotlin/codex-api` `tests/realtime_websocket_e2e.rs:24` — `use tokio::net::TcpListener`
@@ -230,7 +230,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-app-server-client` `src/lib.rs:960` — `use tokio::net::TcpListener`
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/remote_control/enroll.rs:270` — `use tokio::net::TcpListener`
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/remote_control/tests.rs:46` — `use tokio::net::TcpListener`
-- _… and 34 more site(s)._
+- _… and 39 more site(s)._
 
 #### `tokio::sync::mpsc::unbounded_channel` — 26 site(s) (22 codex, 4 other, 4 caller crates)
 
@@ -248,7 +248,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-tui` `src/bottom_pane/list_selection_view.rs:1269` — `use tokio::sync::mpsc::unbounded_channel`
 - _… and 14 more site(s)._
 
-#### `tokio::io::BufReader` — 28 site(s) (21 codex, 7 other, 16 caller crates)
+#### `tokio::io::BufReader` — 31 site(s) (21 codex, 10 other, 17 caller crates)
 
 - ✅ `codex-kotlin/app_test_support` `mcp_process.rs:8` — `use tokio::io::BufReader`
 - ✅ `codex-kotlin/codex-app-server` `tests/common/mcp_process.rs:8` — `use tokio::io::BufReader`
@@ -262,7 +262,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-exec-server` `src/connection.rs:13` — `use tokio::io::BufReader`
 - ✅ `codex-kotlin/codex-exec-server` `src/rpc.rs:522` — `use tokio::io::BufReader`
 - ✅ `codex-kotlin/codex-exec-server` `src/server/processor.rs:197` — `use tokio::io::BufReader`
-- _… and 16 more site(s)._
+- _… and 19 more site(s)._
 
 #### `tokio::sync::broadcast` — 21 site(s) (16 codex, 5 other, 9 caller crates)
 
@@ -312,7 +312,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-rmcp-client` `src/bin/test_streamable_http_server.rs:51` — `use tokio::task`
 - _… and 2 more site(s)._
 
-#### `tokio::sync::Notify` — 23 site(s) (13 codex, 10 other, 8 caller crates)
+#### `tokio::sync::Notify` — 25 site(s) (13 codex, 12 other, 9 caller crates)
 
 - ✅ `codex-kotlin/codex-core` `src/client_tests.rs:43` — `use tokio::sync::Notify`
 - ✅ `codex-kotlin/codex-core` `src/file_watcher.rs:22` — `use tokio::sync::Notify`
@@ -326,9 +326,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-exec-server` `src/local_process.rs:15` — `use tokio::sync::Notify`
 - ✅ `codex-kotlin/codex-shell-escalation` `src/unix/stopwatch.rs:7` — `use tokio::sync::Notify`
 - ✅ `codex-kotlin/core_test_support` `responses.rs:17` — `use tokio::sync::Notify`
-- _… and 11 more site(s)._
+- _… and 13 more site(s)._
 
-#### `tokio::io::AsyncReadExt` — 45 site(s) (12 codex, 33 other, 19 caller crates)
+#### `tokio::io::AsyncReadExt` — 56 site(s) (12 codex, 44 other, 23 caller crates)
 
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/remote_control/tests.rs:43` — `use tokio::io::AsyncReadExt`
 - ✅ `codex-kotlin/codex-core` `src/exec.rs:15` — `use tokio::io::AsyncReadExt`
@@ -342,9 +342,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-uds` `src/lib_tests.rs:4` — `use tokio::io::AsyncReadExt`
 - ✅ `codex-kotlin/codex-utils-pty` `src/pipe.rs:12` — `use tokio::io::AsyncReadExt`
 - ✅ `codex-kotlin/core_test_support` `streaming_sse.rs:5` — `use tokio::io::AsyncReadExt`
-- _… and 33 more site(s)._
+- _… and 44 more site(s)._
 
-#### `tokio::net::TcpStream` — 32 site(s) (12 codex, 20 other, 15 caller crates)
+#### `tokio::net::TcpStream` — 42 site(s) (12 codex, 30 other, 17 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/endpoint/realtime_websocket/methods.rs:30` — `use tokio::net::TcpStream`
 - ✅ `codex-kotlin/codex-api` `src/endpoint/responses_websocket.rs:26` — `use tokio::net::TcpStream`
@@ -358,9 +358,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-exec-server` `tests/http_request.rs:29` — `use tokio::net::TcpStream`
 - ✅ `codex-kotlin/codex-rmcp-client` `tests/streamable_http_test_support.rs:41` — `use tokio::net::TcpStream`
 - ✅ `codex-kotlin/core_test_support` `streaming_sse.rs:289` — `use tokio::net::TcpStream`
-- _… and 20 more site(s)._
+- _… and 30 more site(s)._
 
-#### `tokio::sync::Semaphore` — 16 site(s) (12 codex, 4 other, 9 caller crates)
+#### `tokio::sync::Semaphore` — 18 site(s) (12 codex, 6 other, 10 caller crates)
 
 - ✅ `codex-kotlin/codex-app-server` `src/message_processor.rs:78` — `use tokio::sync::Semaphore`
 - ✅ `codex-kotlin/codex-app-server` `src/request_processors.rs:401` — `use tokio::sync::Semaphore`
@@ -374,7 +374,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-login` `src/auth/manager.rs:17` — `use tokio::sync::Semaphore`
 - ✅ `codex-kotlin/codex-rmcp-client` `src/rmcp_client.rs:57` — `use tokio::sync::Semaphore`
 - ✅ `codex-kotlin/codex-shell-escalation` `src/unix/escalate_server.rs:394` — `use tokio::sync::Semaphore`
-- _… and 4 more site(s)._
+- _… and 6 more site(s)._
 
 #### `tokio::fs` — 12 site(s) (11 codex, 1 other, 6 caller crates)
 
@@ -407,7 +407,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `libwebrtc-kotlin/livekit` `src/rtc_engine/mod.rs:23` — `use tokio::sync::RwLock as AsyncRwLock`
 - _… and 10 more site(s)._
 
-#### `tokio::io` — 15 site(s) (8 codex, 7 other, 9 caller crates)
+#### `tokio::io` — 16 site(s) (8 codex, 8 other, 10 caller crates)
 
 - ✅ `codex-kotlin/codex-app-server-transport` `src/transport/stdio.rs:13` — `use tokio::io`
 - ✅ `codex-kotlin/codex-exec-server` `src/fs_helper.rs:6` — `use tokio::io`
@@ -421,9 +421,9 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `axum-kotlin/axum` `src/serve/mod.rs:485` — `use tokio::io`
 - `libwebrtc-kotlin/encrypted_text_stream` `src/main.rs:12` — `use tokio::io`
 - `quick-xml-kotlin/quick-xml` `src/reader/async_tokio.rs:7` — `use tokio::io`
-- _… and 3 more site(s)._
+- _… and 4 more site(s)._
 
-#### `tokio::io::AsyncRead` — 78 site(s) (6 codex, 72 other, 21 caller crates)
+#### `tokio::io::AsyncRead` — 103 site(s) (6 codex, 97 other, 27 caller crates)
 
 - ✅ `codex-kotlin/codex-core` `src/exec.rs:14` — `use tokio::io::AsyncRead`
 - ✅ `codex-kotlin/codex-exec-server` `src/connection.rs:4` — `use tokio::io::AsyncRead`
@@ -434,12 +434,12 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `axum-kotlin/axum` `src/extract/ws.rs:1072` — `use tokio::io::AsyncRead`
 - `axum-kotlin/axum` `src/serve/listener.rs:2` — `use tokio::io::AsyncRead`
 - `axum-kotlin/axum` `src/serve/mod.rs:485` — `use tokio::io::AsyncRead`
-- `libwebrtc-kotlin/play_from_disk` `src/main.rs:13` — `use tokio::io::AsyncRead`
-- `quick-xml-kotlin/quick-xml` `src/reader/async_tokio.rs:7` — `use tokio::io::AsyncRead`
-- `rama-core-kotlin/rama-core` `src/combinators/either.rs:5` — `use tokio::io::AsyncRead`
-- _… and 66 more site(s)._
+- `axum-server-kotlin/axum-server` `examples/rustls_session.rs:12` — `use tokio::io::AsyncRead`
+- `axum-server-kotlin/axum-server` `src/server.rs:21` — `use tokio::io::AsyncRead`
+- `axum-server-kotlin/axum-server` `src/tls_openssl/future.rs:14` — `use tokio::io::AsyncRead`
+- _… and 91 more site(s)._
 
-#### `tokio::runtime::Handle` — 10 site(s) (6 codex, 4 other, 4 caller crates)
+#### `tokio::runtime::Handle` — 12 site(s) (6 codex, 6 other, 5 caller crates)
 
 - ✅ `codex-kotlin/codex-core` `src/file_watcher.rs:20` — `use tokio::runtime::Handle`
 - ✅ `codex-kotlin/codex-core` `src/skills_watcher.rs:6` — `use tokio::runtime::Handle`
@@ -447,12 +447,14 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `src/thread_manager.rs:73` — `use tokio::runtime::Handle`
 - ✅ `codex-kotlin/codex-exec-server` `src/client/http_response_body_stream.rs:17` — `use tokio::runtime::Handle`
 - ✅ `codex-kotlin/codex-rmcp-client` `src/executor_process_transport.rs:41` — `use tokio::runtime::Handle`
+- `parquet-kotlin/parquet` `src/arrow/async_reader/spawn.rs:25` — `use tokio::runtime::Handle`
+- `parquet-kotlin/parquet` `src/arrow/async_reader/store.rs:29` — `use tokio::runtime::Handle`
 - `tokio-util-kotlin/tokio-util` `src/context.rs:15` — `use tokio::runtime::Handle`
 - `tokio-util-kotlin/tokio-util` `src/task/join_map.rs:9` — `use tokio::runtime::Handle`
 - `tokio-util-kotlin/tokio-util` `src/task/join_queue.rs:8` — `use tokio::runtime::Handle`
 - `tokio-util-kotlin/tokio-util` `src/task/task_tracker.rs:15` — `use tokio::runtime::Handle`
 
-#### `tokio::io::AsyncWrite` — 70 site(s) (5 codex, 65 other, 18 caller crates)
+#### `tokio::io::AsyncWrite` — 88 site(s) (5 codex, 83 other, 22 caller crates)
 
 - ✅ `codex-kotlin/codex-exec-server` `src/client.rs:885` — `use tokio::io::AsyncWrite`
 - ✅ `codex-kotlin/codex-exec-server` `src/connection.rs:5` — `use tokio::io::AsyncWrite`
@@ -462,13 +464,13 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `axum-kotlin/axum` `src/extract/ws.rs:1072` — `use tokio::io::AsyncWrite`
 - `axum-kotlin/axum` `src/serve/listener.rs:2` — `use tokio::io::AsyncWrite`
 - `axum-kotlin/axum` `src/serve/mod.rs:485` — `use tokio::io::AsyncWrite`
-- `quick-xml-kotlin/quick-xml` `src/writer/async_tokio.rs:3` — `use tokio::io::AsyncWrite`
-- `rama-core-kotlin/rama-core` `src/combinators/either.rs:5` — `use tokio::io::AsyncWrite`
-- `rama-core-kotlin/rama-core` `src/stream/mod.rs:1` — `use tokio::io::AsyncWrite`
-- `rama-core-kotlin/rama-core` `src/stream/peek.rs:10` — `use tokio::io::AsyncWrite`
-- _… and 58 more site(s)._
+- `axum-server-kotlin/axum-server` `examples/rustls_session.rs:12` — `use tokio::io::AsyncWrite`
+- `axum-server-kotlin/axum-server` `src/server.rs:21` — `use tokio::io::AsyncWrite`
+- `axum-server-kotlin/axum-server` `src/tls_openssl/future.rs:14` — `use tokio::io::AsyncWrite`
+- `axum-server-kotlin/axum-server` `src/tls_openssl/mod.rs:45` — `use tokio::io::AsyncWrite`
+- _… and 76 more site(s)._
 
-#### `tokio::time` — 17 site(s) (5 codex, 12 other, 8 caller crates)
+#### `tokio::time` — 25 site(s) (5 codex, 20 other, 10 caller crates)
 
 - ✅ `codex-kotlin/codex-rmcp-client` `src/rmcp_client.rs:59` — `use tokio::time`
 - ✅ `codex-kotlin/codex-rmcp-client` `src/rmcp_client.rs:1036` — `use tokio::time`
@@ -479,10 +481,10 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `libwebrtc-kotlin/livekit` `tests/common/e2e/video.rs:25` — `use tokio::time`
 - `libwebrtc-kotlin/livekit` `tests/data_channel_test.rs:16` — `use tokio::time`
 - `libwebrtc-kotlin/livekit` `tests/room_test.rs:16` — `use tokio::time`
+- `tokio-rustls-kotlin/tokio-rustls` `tests/test.rs:23` — `use tokio::time`
 - `tokio-stream-kotlin/tokio-stream` `tests/chunks_timeout.rs:3` — `use tokio::time`
 - `tokio-stream-kotlin/tokio-stream` `tests/stream_chunks_timeout.rs:5` — `use tokio::time`
-- `tokio-stream-kotlin/tokio-stream` `tests/stream_timeout.rs:2` — `use tokio::time`
-- _… and 5 more site(s)._
+- _… and 13 more site(s)._
 
 #### `tokio::select` — 8 site(s) (4 codex, 4 other, 4 caller crates)
 
@@ -547,10 +549,11 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-tui` `src/chatwidget/tests.rs:186` — `pub_use tokio::sync::mpsc::error::TryRecvError`
 - `tokio-util-kotlin/tokio-util` `tests/task_tracker.rs:343` — `use tokio::sync::mpsc::error::TryRecvError`
 
-#### `tokio::io::ReadBuf` — 34 site(s) (2 codex, 32 other, 14 caller crates)
+#### `tokio::io::ReadBuf` — 41 site(s) (2 codex, 39 other, 16 caller crates)
 
 - ✅ `codex-kotlin/codex-uds` `src/lib.rs:11` — `use tokio::io::ReadBuf`
 - ✅ `codex-kotlin/codex-uds` `src/lib.rs:180` — `use tokio::io::ReadBuf`
+- `ogg-kotlin/ogg` `tests/async_read.rs:18` — `use tokio::io::ReadBuf`
 - `quick-xml-kotlin/quick-xml` `src/reader/async_tokio.rs:7` — `use tokio::io::ReadBuf`
 - `rama-core-kotlin/rama-core` `src/combinators/either.rs:5` — `use tokio::io::ReadBuf`
 - `rama-core-kotlin/rama-core` `src/stream/peek.rs:10` — `use tokio::io::ReadBuf`
@@ -560,8 +563,21 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `rama-http-kotlin/rama-http` `src/io/upgrade.rs:43` — `use tokio::io::ReadBuf`
 - `rama-net-kotlin/rama-net` `src/client/either_conn.rs:8` — `use tokio::io::ReadBuf`
 - `rama-net-kotlin/rama-net` `src/stream/layer/tracker/bytes.rs:26` — `use tokio::io::ReadBuf`
-- `rama-net-kotlin/rama-net` `src/tls/server/sni.rs:17` — `use tokio::io::ReadBuf`
-- _… and 22 more site(s)._
+- _… and 29 more site(s)._
+
+#### `tokio::sync::OnceCell` — 11 site(s) (2 codex, 9 other, 5 caller crates)
+
+- ✅ `codex-kotlin/codex-core` `src/tools/network_approval.rs:36` — `use tokio::sync::OnceCell`
+- ✅ `codex-kotlin/codex-exec-server` `src/client.rs:15` — `use tokio::sync::OnceCell`
+- `aws-config-kotlin/aws-config` `src/ecs.rs:71` — `use tokio::sync::OnceCell`
+- `aws-config-kotlin/aws-config` `src/profile.rs:38` — `use tokio::sync::OnceCell`
+- `aws-config-kotlin/aws-config` `src/provider_config.rs:23` — `use tokio::sync::OnceCell`
+- `hf-hub-kotlin/integration-tests` `tests/bucket_download_stream_test.rs:22` — `use tokio::sync::OnceCell`
+- `hf-hub-kotlin/integration-tests` `tests/bucket_sync_test.rs:19` — `use tokio::sync::OnceCell`
+- `hf-hub-kotlin/integration-tests` `tests/bucket_xet_transfer_test.rs:22` — `use tokio::sync::OnceCell`
+- `hf-hub-kotlin/integration-tests` `tests/xet_transfer_test.rs:23` — `use tokio::sync::OnceCell`
+- `ts-rs-kotlin/ts-rs` `src/tokio.rs:1` — `use tokio::sync::OnceCell`
+- `ts-rs-kotlin/ts-rs` `tests/integration/tokio.rs:2` — `use tokio::sync::OnceCell`
 
 #### `tokio::sync::mpsc::UnboundedReceiver` — 11 site(s) (2 codex, 9 other, 7 caller crates)
 
@@ -576,16 +592,6 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `libwebrtc-kotlin/send_bytes` `src/main.rs:5` — `use tokio::sync::mpsc::UnboundedReceiver`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/mpsc_unbounded.rs:4` — `use tokio::sync::mpsc::UnboundedReceiver`
 - `tokio-util-kotlin/tokio-util` `src/task/spawn_pinned.rs:8` — `use tokio::sync::mpsc::UnboundedReceiver`
-
-#### `tokio::sync::OnceCell` — 7 site(s) (2 codex, 5 other, 4 caller crates)
-
-- ✅ `codex-kotlin/codex-core` `src/tools/network_approval.rs:36` — `use tokio::sync::OnceCell`
-- ✅ `codex-kotlin/codex-exec-server` `src/client.rs:15` — `use tokio::sync::OnceCell`
-- `aws-config-kotlin/aws-config` `src/ecs.rs:71` — `use tokio::sync::OnceCell`
-- `aws-config-kotlin/aws-config` `src/profile.rs:38` — `use tokio::sync::OnceCell`
-- `aws-config-kotlin/aws-config` `src/provider_config.rs:23` — `use tokio::sync::OnceCell`
-- `ts-rs-kotlin/ts-rs` `src/tokio.rs:1` — `use tokio::sync::OnceCell`
-- `ts-rs-kotlin/ts-rs` `tests/integration/tokio.rs:2` — `use tokio::sync::OnceCell`
 
 #### `tokio::time::sleep_until` — 6 site(s) (2 codex, 4 other, 4 caller crates)
 
@@ -615,6 +621,12 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `src/tools/handlers/multi_agents/wait.rs:10` — `use tokio::sync::watch::Receiver`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/watch.rs:2` — `use tokio::sync::watch::Receiver`
 
+#### `tokio::time::timeout_at` — 3 site(s) (2 codex, 1 other, 2 caller crates)
+
+- ✅ `codex-kotlin/codex-core` `src/tools/handlers/multi_agents/wait.rs:12` — `use tokio::time::timeout_at`
+- ✅ `codex-kotlin/codex-core` `src/tools/handlers/multi_agents_v2/wait.rs:5` — `use tokio::time::timeout_at`
+- `tokio-rustls-kotlin/tokio-rustls` `examples/server.rs:22` — `use tokio::time::timeout_at`
+
 #### `tokio::sync::SemaphorePermit` — 2 site(s) (2 codex, 0 other, 2 caller crates)
 
 - ✅ `codex-kotlin/codex-app-server` `src/request_processors.rs:402` — `use tokio::sync::SemaphorePermit`
@@ -630,12 +642,7 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - ✅ `codex-kotlin/codex-core` `src/client.rs:99` — `use tokio::sync::oneshot::error::TryRecvError`
 - ✅ `codex-kotlin/codex-core` `src/unified_exec/process.rs:9` — `use tokio::sync::oneshot::error::TryRecvError`
 
-#### `tokio::time::timeout_at` — 2 site(s) (2 codex, 0 other, 1 caller crates)
-
-- ✅ `codex-kotlin/codex-core` `src/tools/handlers/multi_agents/wait.rs:12` — `use tokio::time::timeout_at`
-- ✅ `codex-kotlin/codex-core` `src/tools/handlers/multi_agents_v2/wait.rs:5` — `use tokio::time::timeout_at`
-
-#### `tokio::time::Sleep` — 13 site(s) (1 codex, 12 other, 8 caller crates)
+#### `tokio::time::Sleep` — 18 site(s) (1 codex, 17 other, 10 caller crates)
 
 - ✅ `codex-kotlin/codex-core` `src/unified_exec/async_watcher.rs:7` — `use tokio::time::Sleep`
 - `rama-http-kotlin/rama-http` `src/layer/timeout/body.rs:10` — `use tokio::time::Sleep`
@@ -649,24 +656,28 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `tokio-test-kotlin/tokio-test` `src/stream_mock.rs:44` — `use tokio::time::Sleep`
 - `tokio-util-kotlin/tokio-util` `src/time/delay_queue.rs:8` — `use tokio::time::Sleep`
 - `tonic-kotlin/tonic` `src/transport/service/grpc_timeout.rs:10` — `use tokio::time::Sleep`
-- _… and 1 more site(s)._
+- _… and 6 more site(s)._
 
-#### `tokio::fs::File` — 10 site(s) (1 codex, 9 other, 5 caller crates)
+#### `tokio::fs::File` — 16 site(s) (1 codex, 15 other, 7 caller crates)
 
 - ✅ `codex-kotlin/codex-api` `src/files.rs:10` — `use tokio::fs::File`
 - `libwebrtc-kotlin/save_to_disk` `src/main.rs:7` — `use tokio::fs::File`
+- `parquet-kotlin/parquet` `examples/read_with_rowgroup.rs:29` — `use tokio::fs::File`
+- `parquet-kotlin/parquet` `src/arrow/async_reader/mod.rs:1239` — `use tokio::fs::File`
+- `parquet-kotlin/parquet` `tests/arrow_reader/async_reader.rs:757` — `use tokio::fs::File`
+- `parquet-kotlin/parquet` `tests/arrow_reader/async_reader.rs:781` — `use tokio::fs::File`
+- `parquet-kotlin/parquet` `tests/encryption/encryption_async.rs:46` — `use tokio::fs::File`
 - `rama-http-kotlin/rama-http` `src/layer/compression/layer.rs:117` — `use tokio::fs::File`
 - `rama-http-kotlin/rama-http` `src/layer/compression/stream/layer.rs:118` — `use tokio::fs::File`
 - `rama-http-kotlin/rama-http` `src/layer/har/recorder/fs.rs:11` — `use tokio::fs::File`
 - `rama-http-kotlin/rama-http` `src/service/fs/serve_dir/open_file.rs:24` — `use tokio::fs::File`
 - `rama-http-kotlin/rama-http` `src/service/web/endpoint/response/octet_stream.rs:11` — `use tokio::fs::File`
-- `reqwest-kotlin/reqwest` `src/async_impl/body.rs:12` — `use tokio::fs::File`
-- `reqwest-kotlin/reqwest` `src/async_impl/multipart.rs:15` — `use tokio::fs::File`
-- `runfiles-kotlin/cargo_local` `src/lib.rs:2` — `use tokio::fs::File`
+- _… and 4 more site(s)._
 
-#### `tokio::sync::mpsc::Sender` — 8 site(s) (1 codex, 7 other, 6 caller crates)
+#### `tokio::sync::mpsc::Sender` — 9 site(s) (1 codex, 8 other, 7 caller crates)
 
 - ✅ `codex-kotlin/codex-rollout` `src/recorder.rs:25` — `use tokio::sync::mpsc::Sender`
+- `parquet-kotlin/parquet` `tests/encryption/encryption_async.rs:47` — `use tokio::sync::mpsc::Sender`
 - `rama-http-kotlin/rama-http` `src/layer/traffic_writer/mod.rs:13` — `use tokio::sync::mpsc::Sender`
 - `rama-http-kotlin/rama-http` `src/layer/traffic_writer/request.rs:12` — `use tokio::sync::mpsc::Sender`
 - `rama-http-kotlin/rama-http` `src/layer/traffic_writer/response.rs:13` — `use tokio::sync::mpsc::Sender`
@@ -675,16 +686,18 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `tokio-util-kotlin/tokio-util` `src/sync/mpsc.rs:6` — `use tokio::sync::mpsc::Sender`
 - `tonic-kotlin/tonic` `src/transport/channel/mod.rs:28` — `use tokio::sync::mpsc::Sender`
 
-#### `tokio::net::UnixListener` — 4 site(s) (1 codex, 3 other, 4 caller crates)
+#### `tokio::net::UnixListener` — 5 site(s) (1 codex, 4 other, 5 caller crates)
 
 - ✅ `codex-kotlin/codex-uds` `src/lib.rs:95` — `use tokio::net::UnixListener`
 - `axum-kotlin/axum` `src/serve/mod.rs:484` — `use tokio::net::UnixListener`
+- `axum-server-kotlin/axum-server` `src/server.rs:27` — `use tokio::net::UnixListener`
 - `rama-unix-kotlin/rama-unix` `src/unix/server/listener.rs:16` — `use tokio::net::UnixListener as TokioUnixListener`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/unix_listener.rs:5` — `use tokio::net::UnixListener`
 
-#### `tokio::net::UnixStream` — 4 site(s) (1 codex, 3 other, 4 caller crates)
+#### `tokio::net::UnixStream` — 5 site(s) (1 codex, 4 other, 5 caller crates)
 
 - ✅ `codex-kotlin/codex-uds` `src/lib.rs:96` — `use tokio::net::UnixStream`
+- `axum-server-kotlin/axum-server` `src/server.rs:27` — `use tokio::net::UnixStream`
 - `rama-unix-kotlin/rama-unix` `src/unix/stream.rs:13` — `pub_use tokio::net::UnixStream as TokioUnixStream`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/unix_listener.rs:5` — `use tokio::net::UnixStream`
 - `tonic-kotlin/tonic` `src/transport/channel/uds_connector.rs:13` — `use tokio::net::UnixStream`
@@ -703,20 +716,22 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `tokio-util-kotlin/tokio-util` `src/task/join_map.rs:10` — `use tokio::task::JoinError`
 - `tokio-util-kotlin/tokio-util` `src/task/join_queue.rs:8` — `use tokio::task::JoinError`
 
+#### `tokio::io::BufWriter` — 3 site(s) (1 codex, 2 other, 3 caller crates)
+
+- ✅ `codex-kotlin/codex-exec-server` `src/connection.rs:14` — `use tokio::io::BufWriter`
+- `libwebrtc-kotlin/save_to_disk` `src/main.rs:8` — `use tokio::io::BufWriter`
+- `tokio-rustls-kotlin/tokio-rustls` `src/common/test_stream.rs:259` — `use tokio::io::BufWriter`
+
+#### `tokio::io::DuplexStream` — 3 site(s) (1 codex, 2 other, 3 caller crates)
+
+- ✅ `codex-kotlin/codex-exec-server` `src/server/processor.rs:198` — `use tokio::io::DuplexStream`
+- `rama-net-kotlin/rama-net` `src/test_utils/client/mock_connector.rs:8` — `use tokio::io::DuplexStream`
+- `tokio-rustls-kotlin/tokio-rustls` `tests/test.rs:17` — `use tokio::io::DuplexStream`
+
 #### `tokio::fs::OpenOptions` — 2 site(s) (1 codex, 1 other, 2 caller crates)
 
 - ✅ `codex-kotlin/codex-core` `src/personality_migration.rs:12` — `use tokio::fs::OpenOptions`
 - `tokio-util-kotlin/tokio-util` `tests/compat.rs:8` — `use tokio::fs::OpenOptions`
-
-#### `tokio::io::BufWriter` — 2 site(s) (1 codex, 1 other, 2 caller crates)
-
-- ✅ `codex-kotlin/codex-exec-server` `src/connection.rs:14` — `use tokio::io::BufWriter`
-- `libwebrtc-kotlin/save_to_disk` `src/main.rs:8` — `use tokio::io::BufWriter`
-
-#### `tokio::io::DuplexStream` — 2 site(s) (1 codex, 1 other, 2 caller crates)
-
-- ✅ `codex-kotlin/codex-exec-server` `src/server/processor.rs:198` — `use tokio::io::DuplexStream`
-- `rama-net-kotlin/rama-net` `src/test_utils/client/mock_connector.rs:8` — `use tokio::io::DuplexStream`
 
 #### `tokio::io::Lines` — 2 site(s) (1 codex, 1 other, 2 caller crates)
 
@@ -737,6 +752,11 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 
 - ✅ `codex-kotlin/codex-core` `src/unified_exec/async_watcher.rs:54` — `use tokio::sync::broadcast::error::RecvError`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/broadcast.rs:2` — `use tokio::sync::broadcast::error::RecvError`
+
+#### `tokio::task::spawn_blocking` — 2 site(s) (1 codex, 1 other, 2 caller crates)
+
+- ✅ `codex-kotlin/codex-core` `src/exec_policy.rs:32` — `use tokio::task::spawn_blocking`
+- `axum-server-kotlin/axum-server` `src/tls_rustls/mod.rs:42` — `use tokio::task::spawn_blocking`
 
 #### `tokio::time::MissedTickBehavior` — 2 site(s) (1 codex, 1 other, 2 caller crates)
 
@@ -771,25 +791,46 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 
 - ✅ `codex-kotlin/codex-models-manager` `src/manager.rs:17` — `use tokio::sync::TryLockError`
 
-#### `tokio::task::spawn_blocking` — 1 site(s) (1 codex, 0 other, 1 caller crates)
-
-- ✅ `codex-kotlin/codex-core` `src/exec_policy.rs:32` — `use tokio::task::spawn_blocking`
-
 #### `tokio::time::error::Elapsed` — 1 site(s) (1 codex, 0 other, 1 caller crates)
 
 - ✅ `codex-kotlin/codex-otel` `src/events/session_telemetry.rs:52` — `use tokio::time::error::Elapsed`
 
-#### `tokio::io::AsyncBufRead` — 9 site(s) (0 codex, 9 other, 5 caller crates)
+#### `tokio::io::AsyncBufRead` — 13 site(s) (0 codex, 13 other, 6 caller crates)
 
 - `quick-xml-kotlin/quick-xml` `src/reader/async_tokio.rs:7` — `use tokio::io::AsyncBufRead`
 - `rama-core-kotlin/rama-core` `src/stream/peek.rs:10` — `use tokio::io::AsyncBufRead`
 - `rama-core-kotlin/rama-core` `src/stream/read.rs:7` — `use tokio::io::AsyncBufRead`
 - `rama-net-kotlin/rama-net` `src/tls/server/sni.rs:17` — `use tokio::io::AsyncBufRead`
+- `tokio-rustls-kotlin/tokio-rustls` `src/client.rs:15` — `use tokio::io::AsyncBufRead`
+- `tokio-rustls-kotlin/tokio-rustls` `src/common/mod.rs:7` — `use tokio::io::AsyncBufRead`
+- `tokio-rustls-kotlin/tokio-rustls` `src/lib.rs:51` — `use tokio::io::AsyncBufRead`
+- `tokio-rustls-kotlin/tokio-rustls` `src/server.rs:13` — `use tokio::io::AsyncBufRead`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/lines.rs:6` — `use tokio::io::AsyncBufRead`
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/split.rs:6` — `use tokio::io::AsyncBufRead`
 - `tokio-util-kotlin/tokio-util` `src/either.rs:8` — `use tokio::io::AsyncBufRead`
 - `tokio-util-kotlin/tokio-util` `src/io/stream_reader.rs:7` — `use tokio::io::AsyncBufRead`
-- `tokio-util-kotlin/tokio-util` `src/io/sync_bridge.rs:2` — `use tokio::io::AsyncBufRead`
+- _… and 1 more site(s)._
+
+#### `tokio::io::AsyncSeek` — 8 site(s) (0 codex, 8 other, 5 caller crates)
+
+- `libwebrtc-kotlin/play_from_disk` `src/main.rs:13` — `use tokio::io::AsyncSeek`
+- `ogg-kotlin/ogg` `tests/async_read.rs:18` — `use tokio::io::AsyncSeek`
+- `parquet-kotlin/parquet` `src/arrow/async_reader/mod.rs:34` — `use tokio::io::AsyncSeek`
+- `parquet-kotlin/parquet` `src/file/metadata/push_decoder.rs:181` — `use tokio::io::AsyncSeek`
+- `tokio-util-kotlin/tokio-util` `src/either.rs:8` — `use tokio::io::AsyncSeek`
+- `tokio-util-kotlin/tokio-util` `src/io/sync_bridge.rs:2` — `use tokio::io::AsyncSeek`
+- `tower-http-kotlin/tower-http` `src/services/fs/serve_dir/backend.rs:7` — `use tokio::io::AsyncSeek`
+- `tower-http-kotlin/tower-http` `src/services/fs/serve_dir/tests.rs:1910` — `use tokio::io::AsyncSeek`
+
+#### `tokio::io::AsyncSeekExt` — 7 site(s) (0 codex, 7 other, 5 caller crates)
+
+- `libwebrtc-kotlin/play_from_disk` `src/main.rs:13` — `use tokio::io::AsyncSeekExt`
+- `parquet-kotlin/parquet` `src/arrow/async_reader/mod.rs:34` — `use tokio::io::AsyncSeekExt`
+- `parquet-kotlin/parquet` `src/file/metadata/push_decoder.rs:181` — `use tokio::io::AsyncSeekExt`
+- `rama-http-kotlin/rama-http` `src/service/fs/serve_dir/open_file.rs:24` — `use tokio::io::AsyncSeekExt`
+- `rama-http-kotlin/rama-http` `src/service/web/endpoint/response/octet_stream.rs:277` — `use tokio::io::AsyncSeekExt`
+- `tokio-util-kotlin/tokio-util` `src/io/sync_bridge.rs:2` — `use tokio::io::AsyncSeekExt`
+- `tower-http-kotlin/tower-http` `src/services/fs/serve_dir/open_file.rs:16` — `use tokio::io::AsyncSeekExt`
 
 #### `tokio::sync::mpsc::channel` — 7 site(s) (0 codex, 7 other, 4 caller crates)
 
@@ -809,6 +850,14 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `tokio-util-kotlin/tokio-util` `tests/panic.rs:9` — `use tokio::runtime::Runtime`
 - `tracing-opentelemetry-kotlin/tracing-opentelemetry` `tests/batch_global_subscriber.rs:6` — `use tokio::runtime::Runtime`
 
+#### `tokio::sync::OwnedSemaphorePermit` — 5 site(s) (0 codex, 5 other, 3 caller crates)
+
+- `rama-net-kotlin/rama-net` `src/client/pool/mod.rs:19` — `use tokio::sync::OwnedSemaphorePermit`
+- `tokio-util-kotlin/tokio-util` `src/sync/poll_semaphore.rs:6` — `use tokio::sync::OwnedSemaphorePermit`
+- `tokio-util-kotlin/tokio-util` `tests/poll_semaphore.rs:4` — `use tokio::sync::OwnedSemaphorePermit`
+- `tower-kotlin/tower` `src/limit/concurrency/future.rs:10` — `use tokio::sync::OwnedSemaphorePermit`
+- `tower-kotlin/tower` `src/limit/concurrency/service.rs:2` — `use tokio::sync::OwnedSemaphorePermit`
+
 #### `tokio::task::LocalSet` — 5 site(s) (0 codex, 5 other, 1 caller crates)
 
 - `tokio-util-kotlin/tokio-util` `src/task/join_map.rs:10` — `use tokio::task::LocalSet`
@@ -817,18 +866,19 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `tokio-util-kotlin/tokio-util` `tests/task_join_map.rs:8` — `use tokio::task::LocalSet`
 - `tokio-util-kotlin/tokio-util` `tests/task_tracker.rs:7` — `use tokio::task::LocalSet`
 
-#### `tokio::io::AsyncSeekExt` — 4 site(s) (0 codex, 4 other, 3 caller crates)
+#### `tokio::runtime` — 4 site(s) (0 codex, 4 other, 3 caller crates)
 
-- `libwebrtc-kotlin/play_from_disk` `src/main.rs:13` — `use tokio::io::AsyncSeekExt`
-- `rama-http-kotlin/rama-http` `src/service/fs/serve_dir/open_file.rs:24` — `use tokio::io::AsyncSeekExt`
-- `rama-http-kotlin/rama-http` `src/service/web/endpoint/response/octet_stream.rs:277` — `use tokio::io::AsyncSeekExt`
-- `tokio-util-kotlin/tokio-util` `src/io/sync_bridge.rs:2` — `use tokio::io::AsyncSeekExt`
+- `reqwest-kotlin/reqwest` `src/async_impl/multipart.rs:608` — `use tokio::runtime`
+- `reqwest-kotlin/reqwest` `src/blocking/client.rs:1368` — `use tokio::runtime`
+- `tokio-rustls-kotlin/tokio-rustls` `tests/test.rs:23` — `use tokio::runtime`
+- `tokio-test-kotlin/tokio-test` `src/lib.rs:28` — `use tokio::runtime`
 
-#### `tokio::io::AsyncSeek` — 3 site(s) (0 codex, 3 other, 2 caller crates)
+#### `tokio::sync::mpsc::Receiver` — 4 site(s) (0 codex, 4 other, 4 caller crates)
 
-- `libwebrtc-kotlin/play_from_disk` `src/main.rs:13` — `use tokio::io::AsyncSeek`
-- `tokio-util-kotlin/tokio-util` `src/either.rs:8` — `use tokio::io::AsyncSeek`
-- `tokio-util-kotlin/tokio-util` `src/io/sync_bridge.rs:2` — `use tokio::io::AsyncSeek`
+- `parquet-kotlin/parquet` `tests/encryption/encryption_async.rs:47` — `use tokio::sync::mpsc::Receiver`
+- `rmcp-kotlin/rmcp` `src/transport/streamable_http_server/session/local.rs:10` — `use tokio::sync::mpsc::Receiver`
+- `tokio-stream-kotlin/tokio-stream` `src/wrappers/mpsc_bounded.rs:4` — `use tokio::sync::mpsc::Receiver`
+- `tonic-kotlin/tonic` `src/transport/channel/service/discover.rs:8` — `use tokio::sync::mpsc::Receiver`
 
 #### `tokio::io::Result` — 3 site(s) (0 codex, 3 other, 3 caller crates)
 
@@ -836,23 +886,11 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `rama-net-kotlin/rama-net` `src/client/either_conn.rs:8` — `use tokio::io::Result as IoResult`
 - `tokio-util-kotlin/tokio-util` `src/either.rs:8` — `use tokio::io::Result`
 
-#### `tokio::runtime` — 3 site(s) (0 codex, 3 other, 2 caller crates)
+#### `tokio::io::stdout` — 3 site(s) (0 codex, 3 other, 2 caller crates)
 
-- `reqwest-kotlin/reqwest` `src/async_impl/multipart.rs:608` — `use tokio::runtime`
-- `reqwest-kotlin/reqwest` `src/blocking/client.rs:1368` — `use tokio::runtime`
-- `tokio-test-kotlin/tokio-test` `src/lib.rs:28` — `use tokio::runtime`
-
-#### `tokio::sync::OwnedSemaphorePermit` — 3 site(s) (0 codex, 3 other, 2 caller crates)
-
-- `rama-net-kotlin/rama-net` `src/client/pool/mod.rs:19` — `use tokio::sync::OwnedSemaphorePermit`
-- `tokio-util-kotlin/tokio-util` `src/sync/poll_semaphore.rs:6` — `use tokio::sync::OwnedSemaphorePermit`
-- `tokio-util-kotlin/tokio-util` `tests/poll_semaphore.rs:4` — `use tokio::sync::OwnedSemaphorePermit`
-
-#### `tokio::sync::mpsc::Receiver` — 3 site(s) (0 codex, 3 other, 3 caller crates)
-
-- `rmcp-kotlin/rmcp` `src/transport/streamable_http_server/session/local.rs:10` — `use tokio::sync::mpsc::Receiver`
-- `tokio-stream-kotlin/tokio-stream` `src/wrappers/mpsc_bounded.rs:4` — `use tokio::sync::mpsc::Receiver`
-- `tonic-kotlin/tonic` `src/transport/channel/service/discover.rs:8` — `use tokio::sync::mpsc::Receiver`
+- `rama-http-kotlin/rama-http` `src/layer/traffic_writer/request.rs:11` — `use tokio::io::stdout`
+- `rama-http-kotlin/rama-http` `src/layer/traffic_writer/response.rs:12` — `use tokio::io::stdout`
+- `tokio-rustls-kotlin/tokio-rustls` `examples/client.rs:23` — `use tokio::io::stdout as tokio_stdout`
 
 #### `tokio::time::Interval` — 3 site(s) (0 codex, 3 other, 1 caller crates)
 
@@ -876,15 +914,15 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `rama-core-kotlin/rama-core` `src/combinators/either.rs:5` — `use tokio::io::Error as IoError`
 - `rama-net-kotlin/rama-net` `src/client/either_conn.rs:8` — `use tokio::io::Error as IoError`
 
+#### `tokio::io::Take` — 2 site(s) (0 codex, 2 other, 2 caller crates)
+
+- `rama-http-kotlin/rama-http` `src/service/fs/mod.rs:13` — `use tokio::io::Take`
+- `tower-http-kotlin/tower-http` `src/services/fs/mod.rs:12` — `use tokio::io::Take`
+
 #### `tokio::io::stderr` — 2 site(s) (0 codex, 2 other, 1 caller crates)
 
 - `rama-http-kotlin/rama-http` `src/layer/traffic_writer/request.rs:11` — `use tokio::io::stderr`
 - `rama-http-kotlin/rama-http` `src/layer/traffic_writer/response.rs:12` — `use tokio::io::stderr`
-
-#### `tokio::io::stdout` — 2 site(s) (0 codex, 2 other, 1 caller crates)
-
-- `rama-http-kotlin/rama-http` `src/layer/traffic_writer/request.rs:11` — `use tokio::io::stdout`
-- `rama-http-kotlin/rama-http` `src/layer/traffic_writer/response.rs:12` — `use tokio::io::stdout`
 
 #### `tokio::net::UdpSocket` — 2 site(s) (0 codex, 2 other, 1 caller crates)
 
@@ -916,6 +954,11 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 - `tokio-util-kotlin/tokio-util` `tests/abort_on_drop.rs:1` — `use tokio::task::yield_now`
 - `tokio-util-kotlin/tokio-util` `tests/task_join_queue.rs:4` — `use tokio::task::yield_now`
 
+#### `tokio::time::Timeout` — 2 site(s) (0 codex, 2 other, 1 caller crates)
+
+- `axum-server-kotlin/axum-server` `src/tls_openssl/future.rs:15` — `use tokio::time::Timeout`
+- `axum-server-kotlin/axum-server` `src/tls_rustls/future.rs:15` — `use tokio::time::Timeout`
+
 #### `tokio` — 1 site(s) (0 codex, 1 other, 1 caller crates)
 
 - `reqwest-kotlin/reqwest` `src/async_impl/multipart.rs:608` — `use tokio`
@@ -936,13 +979,17 @@ Sorted by codex demand, then total demand. The first symbols are the priority qu
 
 - `tokio-stream-kotlin/tokio-stream` `src/wrappers/split.rs:6` — `use tokio::io::Split`
 
-#### `tokio::io::Take` — 1 site(s) (0 codex, 1 other, 1 caller crates)
+#### `tokio::io::copy` — 1 site(s) (0 codex, 1 other, 1 caller crates)
 
-- `rama-http-kotlin/rama-http` `src/service/fs/mod.rs:13` — `use tokio::io::Take`
+- `tokio-rustls-kotlin/tokio-rustls` `tests/test.rs:17` — `use tokio::io::copy`
 
 #### `tokio::io::repeat` — 1 site(s) (0 codex, 1 other, 1 caller crates)
 
 - `tokio-util-kotlin/tokio-util` `src/either.rs:218` — `use tokio::io::repeat`
+
+#### `tokio::io::split` — 1 site(s) (0 codex, 1 other, 1 caller crates)
+
+- `tokio-rustls-kotlin/tokio-rustls` `tests/test.rs:17` — `use tokio::io::split`
 
 #### `tokio::net::UnixSocket` — 1 site(s) (0 codex, 1 other, 1 caller crates)
 
