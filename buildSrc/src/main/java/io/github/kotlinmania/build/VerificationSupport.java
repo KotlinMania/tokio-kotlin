@@ -191,6 +191,76 @@ public final class VerificationSupport {
         }
     }
 
+    public static void patchWasmWasiTestFfiImports(
+            File driverDir, File wasmNodeModulesDir, File workspaceRootDir) {
+        File[] candidates = driverDir.listFiles(file -> file.getName().endsWith("-test.mjs"));
+        if (candidates == null || candidates.length != 1) {
+            return;
+        }
+        File driver = candidates[0];
+        String nodeModulesEscaped = wasmNodeModulesDir.getAbsolutePath()
+                .replace("\\", "\\\\")
+                .replace("'", "\\'");
+        String workspaceEscaped = workspaceRootDir.getAbsolutePath()
+                .replace("\\", "\\\\")
+                .replace("'", "\\'");
+        String target = "const wasmInstance = new WebAssembly.Instance(wasmModule, wasi.getImportObject());";
+        String replacement = "const __kmBindWasmWasiImports = async (mod, baseImports) => {\n"
+                + "    const { createRequire } = await import('node:module');\n"
+                + "    const path = await import('node:path');\n"
+                + "    const wasmNodeModules = '" + nodeModulesEscaped + "';\n"
+                + "    const workspaceRoot = '" + workspaceEscaped + "';\n"
+                + "    const req = createRequire(path.join(wasmNodeModules, '_km_resolver.cjs'));\n"
+                + "    const addons = new Map();\n"
+                + "    const loadAddon = (modName) => {\n"
+                + "        if (addons.has(modName)) return addons.get(modName);\n"
+                + "        let addon = null;\n"
+                + "        try {\n"
+                + "            addon = req(`@kotlinmania/${modName}-native-bindings`);\n"
+                + "        } catch (_) {\n"
+                + "            const candidates = [\n"
+                + "                path.join(workspaceRoot, `${modName}-kotlin`, 'src', 'js', `node-${modName}`, 'dist', 'index.js'),\n"
+                + "                path.join(workspaceRoot, modName === 'windowssys' ? 'windows-sys-kotlin' : `${modName}-kotlin`, 'src', 'js', `node-${modName}`, 'dist', 'index.js'),\n"
+                + "            ];\n"
+                + "            for (const cand of candidates) {\n"
+                + "                if (fs.existsSync(cand)) {\n"
+                + "                    try { addon = req(cand); break; } catch (_) {}\n"
+                + "                }\n"
+                + "            }\n"
+                + "        }\n"
+                + "        addons.set(modName, addon);\n"
+                + "        return addon;\n"
+                + "    };\n"
+                + "    for (const imp of WebAssembly.Module.imports(mod)) {\n"
+                + "        if (imp.kind !== 'function' || (baseImports[imp.module] && baseImports[imp.module][imp.name])) continue;\n"
+                + "        if (!baseImports[imp.module]) baseImports[imp.module] = {};\n"
+                + "        const addon = loadAddon(imp.module);\n"
+                + "        const fn = addon ? addon[imp.name] : null;\n"
+                + "        if (typeof fn === 'function') {\n"
+                + "            baseImports[imp.module][imp.name] = (...args) => {\n"
+                + "                const res = fn(...args.map(a => typeof a === 'bigint' ? a.toString() : a));\n"
+                + "                return typeof res === 'string' ? BigInt(res) : res;\n"
+                + "            };\n"
+                + "        } else {\n"
+                + "            baseImports[imp.module][imp.name] = () => {\n"
+                + "                throw new Error(`Unresolved WasmImport ${imp.module}.${imp.name}`);\n"
+                + "            };\n"
+                + "        }\n"
+                + "    }\n"
+                + "    return baseImports;\n"
+                + "};\n"
+                + "const wasmInstance = new WebAssembly.Instance(wasmModule, await __kmBindWasmWasiImports(wasmModule, wasi.getImportObject()));";
+        try {
+            String text = Files.readString(driver.toPath(), StandardCharsets.UTF_8);
+            if (!text.contains("__kmBindWasmWasiImports") && text.contains(target)) {
+                String patched = text.replace(target, replacement);
+                Files.writeString(driver.toPath(), patched, StandardCharsets.UTF_8);
+            }
+        } catch (IOException e) {
+            throw new GradleException("Failed to patch wasmWasi FFI imports in " + driver, e);
+        }
+    }
+
     private static void deleteRecursively(File file) {
         if (!file.exists()) {
             return;

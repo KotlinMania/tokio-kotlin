@@ -309,11 +309,13 @@ public final class AndroidSdkSupport {
         try {
             try (InputStream in = URI.create(url).toURL().openStream()) {
                 Files.copy(in, zipFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new GradleException("Failed to download Android command-line tools from " + url + ": " + e.getMessage(), e);
             }
             deleteRecursively(latestDir);
             latestDir.mkdirs();
-            Path canonicalLatest = latestDir.getCanonicalFile().toPath();
             try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
+                Path canonicalLatest = latestDir.getCanonicalFile().toPath();
                 ZipEntry entry;
                 while ((entry = zis.getNextEntry()) != null) {
                     String name = entry.getName();
@@ -340,12 +342,12 @@ public final class AndroidSdkSupport {
                     }
                     zis.closeEntry();
                 }
+            } catch (IOException e) {
+                throw new GradleException("Failed to extract Android command-line tools archive " + zipFile + " (from " + url + "): " + e.getMessage(), e);
             }
             if (!isWindows) {
                 sdkManager.setExecutable(true);
             }
-        } catch (IOException e) {
-            throw new GradleException("Failed to download or extract Android command-line tools", e);
         } finally {
             deleteRecursively(tmpDir);
         }
